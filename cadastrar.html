@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Cadastrar — Portal OMDA</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#050505',
+            surface: '#101010',
+            line: '#242424',
+            soft: '#8A8A8A',
+            accent: '#013bff'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+
+<body class="min-h-screen bg-ink font-sans text-white antialiased">
+
+
+  <main class="min-h-screen py-12 md:py-20">
+
+    <div class="mx-auto w-full max-w-[1200px] px-4 md:px-6">
+
+
+      <!-- TÍTULO -->
+
+      <header class="mb-10 md:mb-14">
+
+        <p class="text-[10px] font-medium uppercase tracking-[0.25em] text-accent">
+          Cadastrar
+        </p>
+
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-white md:text-4xl">
+          Crie uma conta
+        </h1>
+
+      </header>
+
+
+      <!-- FORMULÁRIO -->
+
+      <form id="userForm">
+
+        <input
+          type="hidden"
+          id="userId"
+        >
+
+
+        <div class="grid gap-6 lg:grid-cols-3">
+
+
+          <!-- ESQUERDA -->
+
+          <div class="space-y-6 lg:col-span-2">
+
+
+            <!-- DADOS DA CONTA -->
+
+            <section class="rounded-2xl border border-line bg-surface p-6 md:p-8">
+
+              <div class="mb-7">
+
+                <p class="text-[10px] font-medium uppercase tracking-[0.2em] text-accent">
+                  Perfil
+                </p>
+
+                <h2 class="mt-2 text-xl font-semibold text-white">
+                  Informações da conta
+                </h2>
+
+              </div>
+
+
+              <div class="grid gap-5 md:grid-cols-2">
+
+
+                <!-- USERNAME -->
+
+                <div>
+
+                  <label
+                    for="username"
+                    class="mb-2 block text-xs font-medium text-white"
+                  >
+                    Username
+                  </label>
+
+                  <input
+                    id="username"
+                    type="text"
+                    placeholder="Nome de usuário"
+                    class="h-14 w-full rounded-xl border border-line bg-ink px-4 text-sm text-white outline-none transition placeholder:text-soft focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+
+                </div>
+
+
+                <!-- NOME -->
+
+                <div>
+
+                  <label
+                    for="name"
+                    class="mb-2 block text-xs font-medium text-white"
+                  >
+                    Nome
+                  </label>
+
+                  <input
+                    id="name"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    class="h-14 w-full rounded-xl border border-line bg-ink px-4 text-sm text-white outline-none transition placeholder:text-soft focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+
+                </div>
+
+
+                <!-- EMAIL -->
+
+                <div class="md:col-span-2">
+
+                  <label
+                    for="email"
+                    class="mb-2 block text-xs font-medium text-white"
+                  >
+                    E-mail
+                  </label>
+
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="usuario@email.com"
+                    class="h-14 w-full rounded-xl border border-line bg-ink px-4 text-sm text-white outline-none transition placeholder:text-soft focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  >
+
+                </div>
+
+
+                <!-- ROLE -->
+
+                <div class="hidden">
+
+                  <select id="role">
+
+                    <option value="user">
+                      Usuário
+                    </option>
+
+                  </select>
+
+                </div>
+
+              </div>
+
+            </section>
+
+
+            <!-- SEGURANÇA -->
+
+            <section class="rounded-2xl border border-line bg-surface p-6 md:p-8">
+
+              <div class="mb-7">
+
+                <p class="text-[10px] font-medium uppercase tracking-[0.2em] text-accent">
+                  Segurança
+                </p>
+
+                <h2 class="mt-2 text-xl font-semibold text-white">
+                  Proteja sua conta
+                </h2>
+
+              </div>
+
+
+              <div class="grid gap-5 md:grid-cols-2">
+
+
+                <!-- SENHA -->
+
+                <div>
+
+                  <label
+                    for="password"
+                    class="mb-2 block text-xs font-medium text-white"
+                  >
+                    Senha
+                  </label>
+
+                  <div class="relative">
+
+                    <input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      class="h-14 w-full rounded-xl border border-line bg-ink px-4 pr-12 text-sm text-white outline-none transition placeholder:text-soft focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    >
+
+                    <button
+                      type="button"
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-soft transition hover:text-white"
+                      onclick="togglePassword('password', this)"
+                      aria-label="Mostrar senha"
+                    >
+                      <i data-lucide="eye" class="h-4 w-4"></i>
+                    </button>
+
+                  </div>
+
+                </div>
+
+
+                <!-- CONFIRMAR SENHA -->
+
+                <div>
+
+                  <label
+                    for="confirmPassword"
+                    class="mb-2 block text-xs font-medium text-white"
+                  >
+                    Confirmar Senha
+                  </label>
+
+                  <div class="relative">
+
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      class="h-14 w-full rounded-xl border border-line bg-ink px-4 pr-12 text-sm text-white outline-none transition placeholder:text-soft focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    >
+
+                    <button
+                      type="button"
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-soft transition hover:text-white"
+                      onclick="togglePassword('confirmPassword', this)"
+                      aria-label="Mostrar senha"
+                    >
+                      <i data-lucide="eye" class="h-4 w-4"></i>
+                    </button>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </section>
+
+
+            <!-- BOTÃO -->
+
+            <button
+              type="submit"
+              class="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.99]"
+            >
+
+              Criar Conta
+
+              <i
+                data-lucide="arrow-right"
+                class="h-4 w-4"
+              ></i>
+
+            </button>
+
+
+          </div>
+
+
+          <!-- DIREITA -->
+
+          <aside class="space-y-6">
+
+
+            <!-- AVATAR -->
+
+            <section class="rounded-2xl border border-line bg-surface p-6 md:p-8">
+
+              <div class="mb-7">
+
+                <p class="text-[10px] font-medium uppercase tracking-[0.2em] text-accent">
+                  Perfil
+                </p>
+
+                <h2 class="mt-2 text-xl font-semibold text-white">
+                  Avatar
+                </h2>
+
+              </div>
+
+
+              <div class="text-center">
+
+
+                <div class="flex justify-center">
+
+                  <img
+                    id="avatarPreview"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='100' fill='%23013bff'/%3E%3Ctext x='100' y='115' text-anchor='middle' font-size='42' font-family='Arial' font-weight='bold' fill='white'%3EOMDA%3C/text%3E%3C/svg%3E"
+                    alt="Avatar"
+                    class="h-36 w-36 rounded-full border-2 border-line object-cover"
+                  >
+
+                </div>
+
+
+                <label
+                  class="mt-6 inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-ink px-5 text-xs font-semibold text-white transition hover:border-accent hover:bg-accent"
+                >
+
+                  <i
+                    data-lucide="image"
+                    class="h-4 w-4"
+                  ></i>
+
+                  Selecionar Imagem
+
+                  <input
+                    id="avatarInput"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp"
+                    class="hidden"
+                  >
+
+                </label>
+
+
+                <p class="mt-4 text-xs text-soft">
+                  JPG, PNG ou WEBP até 2MB
+                </p>
+
+              </div>
+
+            </section>
+
+
+            <!-- AJUDA -->
+
+            <section class="rounded-2xl border border-line bg-surface p-6 md:p-8">
+
+              <div class="mb-6">
+
+                <p class="text-[10px] font-medium uppercase tracking-[0.2em] text-accent">
+                  Suporte
+                </p>
+
+                <h2 class="mt-2 text-lg font-semibold text-white">
+                  Precisa de ajuda?
+                </h2>
+
+              </div>
+
+
+              <div class="space-y-5">
+
+
+                <!-- RECUPERAR -->
+
+                <div class="flex gap-4">
+
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-ink text-accent">
+
+                    <i
+                      data-lucide="lock-keyhole"
+                      class="h-4 w-4"
+                    ></i>
+
+                  </div>
+
+
+                  <div>
+
+                    <p class="text-sm font-medium text-white">
+                      Perdeu sua senha?
+                    </p>
+
+                    <a
+                      href="#"
+                      class="mt-1 inline-block text-xs text-accent transition hover:text-white"
+                    >
+                      Recuperar acesso
+                    </a>
+
+                  </div>
+
+                </div>
+
+
+                <!-- SUPORTE -->
+
+                <div class="flex gap-4">
+
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-ink text-accent">
+
+                    <i
+                      data-lucide="circle-help"
+                      class="h-4 w-4"
+                    ></i>
+
+                  </div>
+
+
+                  <div>
+
+                    <p class="text-sm font-medium text-white">
+                      Problemas para entrar?
+                    </p>
+
+                    <a
+                      href="#"
+                      class="mt-1 inline-block text-xs text-accent transition hover:text-white"
+                    >
+                      Contatar suporte
+                    </a>
+
+                  </div>
+
+                </div>
+
+
+              </div>
+
+            </section>
+
+
+          </aside>
+
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </main>
+
+
+  <script>
+
+    lucide.createIcons();
+
+
+    function togglePassword(id, button) {
+
+      const input = document.getElementById(id);
+
+      const icon = button.querySelector('svg');
+
+      if (input.type === 'password') {
+
+        input.type = 'text';
+
+        button.setAttribute('aria-label', 'Ocultar senha');
+
+        icon.setAttribute('data-lucide', 'eye-off');
+
+      } else {
+
+        input.type = 'password';
+
+        button.setAttribute('aria-label', 'Mostrar senha');
+
+        icon.setAttribute('data-lucide', 'eye');
+
+      }
+
+      lucide.createIcons();
+
+    }
+
+  </script>
+
+
+</body>
+
+</html>

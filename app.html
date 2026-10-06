@@ -1,0 +1,860 @@
+  
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Portal OMDA Fansub</title>
+
+  <link rel="icon" href="favicon.png" type="image/png">
+
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="assets/css/home.css">
+  <link rel="stylesheet" href="assets/css/tema.css?v=2">
+  <link rel="stylesheet" href="assets/css/loader.css">
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+  >
+
+  <!-- GOOGLE ANALYTICS -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LHP10EQQL2"></script>
+
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'G-LHP10EQQL2');
+  </script>
+
+  <!-- TAILWIND -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+
+    tailwind.config = {
+
+      theme: {
+
+        extend: {
+
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          },
+
+          colors: {
+            ink: '#050505',
+            surface: '#101010',
+            line: '#242424',
+            soft: '#A1A1AA',
+            accent: '#013bff'
+          },
+
+          animation: {
+
+            'fade-up':
+              'fadeUp .6s cubic-bezier(.22,1,.36,1) both',
+
+            'scale-in':
+              'scaleIn .5s cubic-bezier(.22,1,.36,1) both',
+
+            'pulse-soft':
+              'pulseSoft 2.5s ease-in-out infinite'
+
+          },
+
+          keyframes: {
+
+            fadeUp: {
+
+              from: {
+                opacity: '0',
+                transform: 'translateY(18px)'
+              },
+
+              to: {
+                opacity: '1',
+                transform: 'translateY(0)'
+              }
+
+            },
+
+            scaleIn: {
+
+              from: {
+                opacity: '0',
+                transform: 'scale(.97)'
+              },
+
+              to: {
+                opacity: '1',
+                transform: 'scale(1)'
+              }
+
+            },
+
+            pulseSoft: {
+
+              '0%,100%': {
+                opacity: '.5'
+              },
+
+              '50%': {
+                opacity: '1'
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+    };
+
+  </script>
+
+
+  <!-- ========================================================= -->
+  <!-- CORREÇÃO GLOBAL DE CORES -->
+  <!-- ========================================================= -->
+
+  <style>
+
+    html,
+    body {
+      background: #050505 !important;
+      color: #f4f4f5 !important;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    #content {
+      color: #f4f4f5 !important;
+    }
+
+    /* textos claros */
+
+    .text-white {
+      color: #ffffff !important;
+    }
+
+    .text-zinc-300 {
+      color: #d4d4d8 !important;
+    }
+
+    .text-zinc-400 {
+      color: #a1a1aa !important;
+    }
+
+    .text-zinc-500 {
+      color: #8f8f98 !important;
+    }
+
+    .text-zinc-600 {
+      color: #71717a !important;
+    }
+
+    .text-zinc-700 {
+      color: #52525b !important;
+    }
+
+    .text-gray-400 {
+      color: #a1a1aa !important;
+    }
+
+    .text-gray-500 {
+      color: #8f8f98 !important;
+    }
+
+    .text-gray-600 {
+      color: #71717a !important;
+    }
+
+    /* opacidades muito escuras */
+
+    .text-white\/20 {
+      color: rgba(255,255,255,.55) !important;
+    }
+
+    .text-white\/25 {
+      color: rgba(255,255,255,.60) !important;
+    }
+
+    .text-white\/30 {
+      color: rgba(255,255,255,.65) !important;
+    }
+
+    .text-white\/40 {
+      color: rgba(255,255,255,.72) !important;
+    }
+
+    /* conteúdo carregado */
+
+    #content * {
+      --tw-text-opacity: 1;
+    }
+
+    /* scrollbar */
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #050505;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #292929;
+      border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+  <!-- ========================================================= -->
+  <!-- LOADER -->
+  <!-- ========================================================= -->
+
+  <div
+    id="app-loader"
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-[#050505]"
+  >
+
+    <div class="text-center">
+
+      <div class="relative mx-auto h-28 w-28">
+
+        <div
+          class="absolute inset-0 animate-pulse rounded-full bg-[#013bff] opacity-30 blur-3xl"
+        ></div>
+
+      </div>
+
+
+      <div class="flex items-center justify-center">
+
+        <a>
+
+          <img
+            class="h-14"
+            src="assets/images/ft-logo.png"
+            alt="Logo"
+          >
+
+        </a>
+
+      </div>
+
+
+      <!-- BARRA -->
+
+      <div
+        class="mx-auto mt-10 h-1 w-72 overflow-hidden rounded-full bg-white/10"
+      >
+
+        <div
+          id="loader-bar"
+          class="h-full rounded-full bg-[#013bff] transition-all duration-300"
+          style="width:0%"
+        ></div>
+
+      </div>
+
+
+      <!-- STATUS -->
+
+      <p
+        id="loader-text"
+        class="mt-5 text-sm text-white/70"
+      >
+        Inicializando...
+      </p>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ========================================================= -->
+  <!-- APLICAÇÃO -->
+  <!-- ========================================================= -->
+
+  <div class="min-h-screen lg:flex">
+
+
+    <!-- SIDEBAR -->
+
+    <div
+      id="box-sidebar"
+      class=""
+    ></div>
+
+
+
+    <!-- ======================================================= -->
+    <!-- ÁREA PRINCIPAL -->
+    <!-- ======================================================= -->
+
+    <main
+      id="main-content"
+      class="flex h-screen flex-1 flex-col overflow-hidden"
+    >
+
+
+      <!-- HEADER -->
+
+      <div id="header"></div>
+
+
+      <!-- CONTEÚDO -->
+
+      <div
+        id="content"
+        class="flex-1 overflow-auto"
+      ></div>
+
+
+    </main>
+
+
+
+    
+<!-- ======================================================= -->
+<!-- PAINEL DO USUÁRIO -->
+<!-- ======================================================= -->
+
+<aside
+  id="user-sidebar"
+  class="hidden w-80"
+>
+
+  <div class="h-full flex flex-col gap-3 p-3">
+
+
+    <!-- ================================================= -->
+    <!-- BOLHA PERFIL -->
+    <!-- ================================================= -->
+
+    <div
+      class="
+        overflow-hidden
+        rounded-[28px]
+        border border-white/[0.06]
+        bg-[#111111]/90
+        backdrop-blur-xl
+      "
+    >
+
+      <!-- BANNER -->
+
+      <div class="relative h-28">
+
+        <div
+          class="
+            absolute inset-0
+            bg-gradient-to-t
+            from-[#111111]
+            via-[#111111]/40
+            to-transparent
+          "
+        ></div>
+
+
+        <!-- AVATAR -->
+
+        <div
+          class="
+            absolute
+            -bottom-9
+            left-1/2
+            -translate-x-1/2
+          "
+        >
+
+          <img
+            src="assets/images/user-avatar.png"
+            class="
+              h-20 w-20
+              rounded-[24px]
+              border-4
+              border-[#111111]
+              object-cover
+            "
+            alt="Avatar"
+          >
+
+        </div>
+
+      </div>
+
+
+
+      <!-- DADOS -->
+
+      <div class="px-5 pb-5 pt-12">
+
+        <div class="flex flex-col items-center">
+
+
+          <h3
+            class="
+              text-lg
+              font-bold
+              tracking-wide
+              text-white
+            "
+            data-user-name
+          ></h3>
+
+
+          <span
+            data-user-role
+            class="
+              mt-2
+              rounded-full
+              border border-[#5864be]/20
+              bg-[#5864be]/10
+              px-3 py-1
+              text-[10px]
+              uppercase
+              tracking-widest
+              text-[#c7d0ff]
+            "
+          ></span>
+
+
+          <span
+            data-user-email
+            class="
+              mt-2
+              max-w-full
+              truncate
+              text-xs
+              text-zinc-500
+            "
+          ></span>
+
+        </div>
+
+
+        <!-- STATS -->
+
+        <div class="mt-5 grid grid-cols-2 gap-2">
+
+
+          <!-- RATIO -->
+
+          <div
+            class="
+              rounded-[18px]
+              border border-white/[0.05]
+              bg-white/[0.03]
+              p-3
+            "
+          >
+
+            <div class="flex items-center gap-2 text-green-400">
+
+              <i
+                data-lucide="shield-check"
+                class="h-4 w-4"
+              ></i>
+
+              <span class="font-bold text-white">
+                2.22
+              </span>
+
+            </div>
+
+            <div
+              class="
+                mt-1
+                text-[10px]
+                uppercase
+                tracking-wider
+                text-zinc-500
+              "
+            >
+              Ratio
+            </div>
+
+          </div>
+
+
+
+          <!-- OTABILLS -->
+
+          <div
+            class="
+              rounded-[18px]
+              border border-white/[0.05]
+              bg-white/[0.03]
+              p-3
+            "
+          >
+
+            <div class="flex items-center gap-2 text-yellow-400">
+
+              <i
+                data-lucide="coins"
+                class="h-4 w-4"
+              ></i>
+
+              <span class="font-bold text-white">
+                19.57
+              </span>
+
+            </div>
+
+            <div
+              class="
+                mt-1
+                text-[10px]
+                uppercase
+                tracking-wider
+                text-zinc-500
+              "
+            >
+              Otabills
+            </div>
+
+          </div>
+
+
+
+          <!-- UPLOAD -->
+
+          <div
+            class="
+              rounded-[18px]
+              border border-white/[0.05]
+              bg-white/[0.03]
+              p-3
+            "
+          >
+
+            <div class="flex items-center gap-2 text-cyan-400">
+
+              <i
+                data-lucide="upload"
+                class="h-4 w-4"
+              ></i>
+
+              <span class="font-bold text-white">
+                4.3 TB
+              </span>
+
+            </div>
+
+            <div
+              class="
+                mt-1
+                text-[10px]
+                uppercase
+                tracking-wider
+                text-zinc-500
+              "
+            >
+              Upload
+            </div>
+
+          </div>
+
+
+
+          <!-- DOWNLOAD -->
+
+          <div
+            class="
+              rounded-[18px]
+              border border-white/[0.05]
+              bg-white/[0.03]
+              p-3
+            "
+          >
+
+            <div class="flex items-center gap-2 text-red-400">
+
+              <i
+                data-lucide="download"
+                class="h-4 w-4"
+              ></i>
+
+              <span class="font-bold text-white">
+                1.9 TB
+              </span>
+
+            </div>
+
+            <div
+              class="
+                mt-1
+                text-[10px]
+                uppercase
+                tracking-wider
+                text-zinc-500
+              "
+            >
+              Download
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- ================================================= -->
+    <!-- BOLHA CONTINUE LENDO -->
+    <!-- ================================================= -->
+
+    <div
+      class="
+        rounded-[28px]
+        border border-white/[0.06]
+        bg-[#111111]/90
+        backdrop-blur-xl
+        p-5
+      "
+    >
+
+      <div
+        class="
+          text-[10px]
+          uppercase
+          tracking-[0.18em]
+          text-zinc-500
+        "
+      >
+        Continue lendo
+      </div>
+
+
+      <div class="mt-2 text-base font-semibold text-white">
+        One Piece
+      </div>
+
+
+      <div class="mt-1 text-sm text-zinc-400">
+        Capítulo 1158 • 82% concluído
+      </div>
+
+
+      <!-- PROGRESSO -->
+
+      <div class="mt-4 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+
+        <div
+          class="h-full w-[82%] rounded-full bg-[#5864be]"
+        ></div>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- ================================================= -->
+    <!-- BOLHA ESTATÍSTICAS -->
+    <!-- ================================================= -->
+
+    <div class="grid grid-cols-3 gap-2">
+
+
+      <div
+        class="
+          rounded-[22px]
+          border border-white/[0.06]
+          bg-[#111111]/90
+          backdrop-blur-xl
+          p-3
+          text-center
+        "
+      >
+
+        <div class="text-xl font-bold text-white">
+          247
+        </div>
+
+        <div class="mt-1 text-[10px] text-zinc-500">
+          Mangás
+        </div>
+
+      </div>
+
+
+      <div
+        class="
+          rounded-[22px]
+          border border-white/[0.06]
+          bg-[#111111]/90
+          backdrop-blur-xl
+          p-3
+          text-center
+        "
+      >
+
+        <div class="text-xl font-bold text-white">
+          19
+        </div>
+
+        <div class="mt-1 text-[10px] text-zinc-500">
+          Sequência
+        </div>
+
+      </div>
+
+
+      <div
+        class="
+          rounded-[22px]
+          border border-white/[0.06]
+          bg-[#111111]/90
+          backdrop-blur-xl
+          p-3
+          text-center
+        "
+      >
+
+        <div class="text-xl font-bold text-white">
+          S
+        </div>
+
+        <div class="mt-1 text-[10px] text-zinc-500">
+          Rank
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- ================================================= -->
+    <!-- BOLHA AÇÃO -->
+    <!-- ================================================= -->
+
+    <button
+      type="button"
+      class="
+        w-full
+        rounded-[22px]
+        border border-[#5864be]/20
+        bg-[#5864be]/10
+        py-3
+        font-medium
+        text-[#c7d0ff]
+        transition-all
+        hover:bg-[#5864be]/20
+        hover:text-white
+      "
+    >
+      Continuar Jornada
+    </button>
+
+
+
+    <!-- ================================================= -->
+    <!-- LOGOUT -->
+    <!-- ================================================= -->
+
+    <button
+      data-logout
+      type="button"
+      class="
+        flex
+        w-full
+        items-center
+        justify-center
+        gap-2
+        rounded-[22px]
+        border border-white/[0.06]
+        bg-[#111111]/80
+        py-3
+        text-sm
+        text-zinc-500
+        transition-all
+        hover:border-red-500/20
+        hover:bg-red-500/[0.06]
+        hover:text-red-300
+      "
+    >
+
+      <i
+        data-lucide="log-out"
+        class="h-4 w-4"
+      ></i>
+
+      Sair da conta
+
+    </button>
+
+
+  </div>
+
+</aside>
+ 
+
+
+  </div>
+
+
+
+  <!-- ========================================================= -->
+  <!-- FOOTER -->
+  <!-- ========================================================= -->
+
+  <div id="footer"></div>
+
+
+
+  <!-- ========================================================= -->
+  <!-- SCRIPTS -->
+  <!-- ========================================================= -->
+
+  <script src="assets/js/tema.js"></script>
+
+  <script src="assets/js/loader.js"></script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+  <script
+    type="module"
+    src="js/app.js"
+  ></script>
+
+
+</body>
+
+</html>
+ 
