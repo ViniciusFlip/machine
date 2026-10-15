@@ -1,0 +1,66 @@
+
+<section class="p-4 md:p-8 space-y-6 text-white">
+
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold">Histórico profissional</h1>
+      <p class="text-sm text-zinc-400">Cargos, períodos e funções</p>
+    </div>
+
+    <button onclick="novaHistoria()"
+      class="rounded-xl bg-orange-600 px-4 py-3 text-sm font-semibold">
+      + Novo
+    </button>
+  </div>
+
+  <form id="historiaForm"
+    class="hidden space-y-4 rounded-2xl border border-white/10 bg-zinc-900 p-5">
+
+    <input type="hidden" id="historiaId">
+
+    <input id="cargo" required maxlength="120"
+      placeholder="Cargo"
+      class="w-full rounded-xl bg-zinc-800 p-3 outline-none focus:ring-2 focus:ring-orange-500">
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <label class="text-sm text-zinc-400">
+        De
+        <input id="dataDe" type="date" required
+          class="mt-2 w-full rounded-xl bg-zinc-800 p-3 text-white">
+      </label>
+
+      <label class="text-sm text-zinc-400">
+        Até
+        <input id="dataAte" type="date"
+          class="mt-2 w-full rounded-xl bg-zinc-800 p-3 text-white">
+      </label>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm text-zinc-300">
+      <input id="cargoAtual" type="checkbox"
+        class="accent-orange-500">
+      Trabalho atualmente neste cargo
+    </label>
+
+    <textarea id="funcoes" required maxlength="5000" rows="5"
+      placeholder="Funções e responsabilidades..."
+      class="w-full rounded-xl bg-zinc-800 p-3 outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+
+    <div class="flex gap-3">
+      <button type="submit"
+        class="flex-1 rounded-xl bg-orange-600 p-3 font-semibold hover:bg-orange-700">
+        Salvar registro
+      </button>
+
+      <button type="button" onclick="cancelarHistoria()"
+        class="rounded-xl bg-zinc-700 px-4 py-3">
+        Cancelar
+      </button>
+    </div>
+  </form>
+
+  <div id="listaHistorias" class="space-y-3">
+    <p class="text-sm text-zinc-400">Carregando histórico...</p>
+  </div>
+
+</section>

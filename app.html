@@ -854,6 +854,203 @@
   ></script>
 
 
+<script type="module">
+(async () => {
+  try {
+const { db } = await import("./firebase/config.js");
+
+const {
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp
+} = await import(
+  "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+);
+    const el = id => document.getElementById(id);
+    let observer;
+
+    async function iniciarHistorias() {
+      const form = el("historiaForm");
+      const lista = el("listaHistorias");
+
+      if (!form || !lista || form.dataset.initHistorias) return;
+
+      form.dataset.initHistorias = "true";
+
+      window.novaHistoria = () => {
+        form.reset();
+        el("historiaId").value = "";
+        el("dataAte").disabled = false;
+        form.classList.remove("hidden");
+      };
+
+      window.cancelarHistoria = () => {
+        form.classList.add("hidden");
+      };
+
+      el("cargoAtual").addEventListener("change", e => {
+        el("dataAte").disabled = e.target.checked;
+        if (e.target.checked) el("dataAte").value = "";
+      });
+
+      async function carregar() {
+        lista.replaceChildren();
+
+        try {
+          const snapshot = await getDocs(collection(db, "historias"));
+          const registros = snapshot.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+          }));
+
+          registros.sort((a, b) =>
+            (b.dataDe || "").localeCompare(a.dataDe || "")
+          );
+
+          if (!registros.length) {
+            lista.textContent = "Nenhum registro cadastrado.";
+            return;
+          }
+
+          registros.forEach(h => {
+            const card = document.createElement("article");
+            card.className =
+              "rounded-2xl border border-white/10 bg-zinc-900 p-5 space-y-3";
+
+            const titulo = document.createElement("h2");
+            titulo.className = "text-lg font-bold text-white";
+            titulo.textContent = h.cargo || "";
+
+            const periodo = document.createElement("p");
+            periodo.className = "text-sm text-orange-400";
+            periodo.textContent =
+              `${h.dataDe || "—"} — ${h.dataAte || "Atual"}`;
+
+            const funcoes = document.createElement("p");
+            funcoes.className = "whitespace-pre-wrap text-sm text-zinc-300";
+            funcoes.textContent = h.funcoes || "";
+
+            const acoes = document.createElement("div");
+            acoes.className = "flex gap-4";
+
+            const editar = document.createElement("button");
+            editar.type = "button";
+            editar.className = "text-sm text-orange-400";
+            editar.textContent = "Editar";
+
+            editar.onclick = () => {
+              el("historiaId").value = h.id;
+              el("cargo").value = h.cargo || "";
+              el("dataDe").value = h.dataDe || "";
+              el("dataAte").value = h.dataAte || "";
+              el("funcoes").value = h.funcoes || "";
+              el("cargoAtual").checked = !h.dataAte;
+              el("dataAte").disabled = !h.dataAte;
+              form.classList.remove("hidden");
+              form.scrollIntoView({ behavior: "smooth", block: "start" });
+            };
+
+            const excluir = document.createElement("button");
+            excluir.type = "button";
+            excluir.className = "text-sm text-red-400";
+            excluir.textContent = "Excluir";
+
+            excluir.onclick = async () => {
+              if (!confirm("Deseja excluir este registro?")) return;
+
+              try {
+                await deleteDoc(doc(db, "historias", h.id));
+                await carregar();
+              } catch (error) {
+                console.error(error);
+                alert("Não foi possível excluir o registro.");
+              }
+            };
+
+            acoes.append(editar, excluir);
+            card.append(titulo, periodo, funcoes, acoes);
+            lista.append(card);
+          });
+        } catch (error) {
+          console.error("Erro ao carregar histórias:", error);
+          lista.textContent = "Erro ao carregar. Verifique o Firebase.";
+        }
+      }
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const id = el("historiaId").value;
+        const dataDe = el("dataDe").value;
+        const dataAte = el("cargoAtual").checked
+          ? ""
+          : el("dataAte").value;
+
+        if (dataAte && dataAte < dataDe) {
+          alert("A data final não pode ser anterior à data inicial.");
+          return;
+        }
+
+        const botao = form.querySelector('[type="submit"]');
+        botao.disabled = true;
+
+        try {
+          const dados = {
+            cargo: el("cargo").value.trim(),
+            dataDe,
+            dataAte,
+            funcoes: el("funcoes").value.trim(),
+            atualizadoEm: serverTimestamp()
+          };
+
+          if (id) {
+            await updateDoc(doc(db, "historias", id), dados);
+          } else {
+            await addDoc(collection(db, "historias"), {
+              ...dados,
+              criadoEm: serverTimestamp()
+            });
+          }
+
+          form.reset();
+          el("historiaId").value = "";
+          el("dataAte").disabled = false;
+          form.classList.add("hidden");
+
+          await carregar();
+        } catch (error) {
+          console.error("Erro ao salvar história:", error);
+          alert("Não foi possível salvar. Verifique as regras do Firestore.");
+        } finally {
+          botao.disabled = false;
+        }
+      });
+
+      await carregar();
+    }
+
+    observer = new MutationObserver(() => {
+      iniciarHistorias();
+    });
+
+    observer.observe(document.getElementById("content") || document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    iniciarHistorias();
+
+  } catch (error) {
+    console.error("Módulo de histórias:", error);
+  }
+})();
+</script>
+
+
 </body>
 
 </html>
