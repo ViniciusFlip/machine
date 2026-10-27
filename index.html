@@ -7,7 +7,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Portal OMDA Fansub</title>
+  <title>FISHER </title>
 
   <link rel="icon" href="favicon.png" type="image/png">
 
@@ -893,6 +893,964 @@
     type="module"
     src="js/app.js"
   ></script>
+
+
+<script type="module">
+import {
+  initializeApp,
+  getApps,
+  getApp
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+const statusFirebaseConfig = {
+  apiKey: "AIzaSyD-xzRjMRVUpey19g745DvPjjpCApqSHVE",
+  authDomain: "myops-d7525.firebaseapp.com",
+  projectId: "myops-d7525",
+  storageBucket: "myops-d7525.firebasestorage.app",
+  messagingSenderId: "247824192162",
+  appId: "1:247824192162:web:77c91ab1e3df855dc7fdfb"
+};
+
+let statusInterval = null;
+
+function iniciarStatus(root) {
+  if (root.dataset.statusInicializado === "true") return;
+  root.dataset.statusInicializado = "true";
+
+  const app = getApps().length
+    ? getApp()
+    : initializeApp(statusFirebaseConfig);
+
+  const db = getFirestore(app);
+  const $ = id => root.querySelector("#status-" + id);
+
+  const diaSemana = () => new Date().getDay();
+
+  function formatarHoras(minutos) {
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+
+    if (!horas) return `${mins}min`;
+    if (!mins) return `${horas}h`;
+    return `${horas}h ${String(mins).padStart(2, "0")}min`;
+  }
+
+  function minutosHora(hora) {
+    if (!hora || !/^\d{2}:\d{2}$/.test(hora)) return 0;
+    const [h, m] = hora.split(":").map(Number);
+    return h * 60 + m;
+  }
+
+  function atualizarRelogio() {
+    const agora = new Date();
+
+    $("data").textContent = agora.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    });
+
+    $("agora").textContent = "Agora são " +
+      agora.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+  }
+
+  async function carregarStatus() {
+    $("mensagem").textContent = "Atualizando registros...";
+
+    try {
+      const snapshot = await getDocs(collection(db, "atividades"));
+
+      const hoje = diaSemana();
+
+      const atividadesHoje = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(a =>
+          Number(a.dia) === hoje &&
+          a.tipo === "trabalho_fisico"
+        );
+
+      let total = 0;
+      let manha = 0;
+      let tarde = 0;
+      let noite = 0;
+
+      atividadesHoje.forEach(a => {
+        const inicio = minutosHora(a.inicio);
+        const fim = minutosHora(a.fim);
+
+        if (fim <= inicio) return;
+
+        const duracao = fim - inicio;
+        total += duracao;
+
+        // Mantém a classificação por horário de início,
+        // conforme a organização da página Rotina.
+        if (a.inicio >= "05:00" && a.inicio < "12:00") {
+          manha += duracao;
+        } else if (a.inicio >= "12:00" && a.inicio < "18:00") {
+          tarde += duracao;
+        } else {
+          noite += duracao;
+        }
+      });
+
+      $("total").textContent = formatarHoras(total);
+      $("manha").textContent = formatarHoras(manha);
+      $("tarde").textContent = formatarHoras(tarde);
+      $("noite").textContent = formatarHoras(noite);
+
+      $("registros").textContent =
+        `${atividadesHoje.length} atividade(s) de trabalho registradas hoje`;
+
+      $("mensagem").textContent =
+        "Dados calculados com base na rotina cadastrada.";
+
+      atualizarRelogio();
+    } catch (erro) {
+      console.error("Erro ao carregar status:", erro);
+      $("mensagem").textContent =
+        "Não foi possível carregar os dados do Firebase.";
+    }
+  }
+
+  atualizarRelogio();
+  carregarStatus();
+
+  statusInterval = setInterval(atualizarRelogio, 1000);
+}
+
+function verificarPaginaStatus() {
+  const root = document.getElementById("status-app");
+  if (root) iniciarStatus(root);
+}
+
+verificarPaginaStatus();
+
+const statusObserver = new MutationObserver(verificarPaginaStatus);
+
+statusObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+</script>
+
+<script type="module">
+import {
+  initializeApp,
+  getApps,
+  getApp
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+const metasFirebaseConfig = {
+  apiKey: "AIzaSyD-xzRjMRVUpey19g745DvPjjpCApqSHVE",
+  authDomain: "myops-d7525.firebaseapp.com",
+  projectId: "myops-d7525",
+  storageBucket: "myops-d7525.firebasestorage.app",
+  messagingSenderId: "247824192162",
+  appId: "1:247824192162:web:77c91ab1e3df855dc7fdfb"
+};
+
+const categoriasMetas = {
+  espiritual: { nome: "Espiritual", cor: "#a78bfa" },
+  saude: { nome: "Saúde", cor: "#34d399" },
+  trabalho: { nome: "Trabalho", cor: "#60a5fa" },
+  pessoal: { nome: "Pessoal", cor: "#fbbf24" }
+};
+
+let metasDb;
+
+function iniciarMetas(root) {
+  if (root.dataset.metasInicializadas === "true") return;
+  root.dataset.metasInicializadas = "true";
+
+  const app = getApps().length
+    ? getApp()
+    : initializeApp(metasFirebaseConfig);
+
+  metasDb = getFirestore(app);
+
+  const $ = id => root.querySelector("#metas-" + id);
+
+  let metas = [];
+  let filtro = "todas";
+  let editando = null;
+  let ocupado = false;
+
+  const hoje = () => {
+    const d = new Date();
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0")
+    ].join("-");
+  };
+
+  function atualizarIcones() {
+    if (window.lucide) {
+      window.lucide.createIcons({ root });
+    }
+  }
+
+  function escapar(valor) {
+    return String(valor ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[c]);
+  }
+
+  function formatarData(valor) {
+    if (!valor) return "—";
+    const partes = valor.split("-").map(Number);
+    if (partes.length !== 3 || partes.some(n => !n)) return "—";
+    return new Date(partes[0], partes[1] - 1, partes[2])
+      .toLocaleDateString("pt-BR");
+  }
+
+  function abrirFormulario(meta = null) {
+    editando = meta?.id || null;
+    $("form").reset();
+
+    $("nome").value = meta?.nome || "";
+    $("tipo").value = meta?.tipo || "espiritual";
+    $("inicio").value = meta?.inicio || hoje();
+    $("fim").value = meta?.fim || "";
+    $("pct").value = meta?.progresso ?? 0;
+    $("valor-pct").textContent = $("pct").value;
+
+    $("titulo-form").textContent = meta ? "Editar meta" : "Nova meta";
+    $("salvar").textContent = "Salvar meta";
+    $("form").classList.remove("hidden");
+
+    $("form").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+    atualizarIcones();
+  }
+
+  function fecharFormulario() {
+    $("form").classList.add("hidden");
+    editando = null;
+  }
+
+  async function carregar() {
+    $("mensagem").textContent = "Carregando metas...";
+
+    try {
+      const snap = await getDocs(
+        query(collection(metasDb, "metas"), orderBy("criadoEm", "desc"))
+      );
+
+      metas = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      renderizar();
+      $("mensagem").textContent = "";
+    } catch (erro) {
+      console.error("Erro ao carregar metas:", erro);
+      $("mensagem").textContent =
+        "Não foi possível carregar. Verifique o Firestore e as regras de acesso.";
+    }
+  }
+
+  function renderizar() {
+    $("total").textContent = metas.length;
+    $("ativas").textContent =
+      metas.filter(m => Number(m.progresso || 0) < 100).length;
+    $("feitas").textContent =
+      metas.filter(m => Number(m.progresso || 0) >= 100).length;
+
+    const itens = metas.filter(m =>
+      filtro === "todas" || m.tipo === filtro
+    );
+
+    $("vazio").classList.toggle("hidden", itens.length > 0);
+
+    $("lista").innerHTML = itens.map(m => {
+      const categoria = categoriasMetas[m.tipo] || categoriasMetas.pessoal;
+      const cor = categoria.cor;
+      const nome = escapar(m.nome);
+      const inicio = m.inicio || "";
+      const fim = m.fim || m.inicio || "";
+      const percentual = Math.max(
+        0,
+        Math.min(100, Number(m.progresso) || 0)
+      );
+
+      const inicioMs = inicio
+        ? new Date(inicio + "T00:00:00").getTime()
+        : 0;
+
+      const fimMs = fim
+        ? new Date(fim + "T23:59:59").getTime()
+        : 0;
+
+      const agora = Date.now();
+
+      const tempo = !inicioMs || !fimMs
+        ? 0
+        : fimMs <= inicioMs
+          ? (agora >= fimMs ? 100 : 0)
+          : Math.max(
+              0,
+              Math.min(
+                100,
+                Math.round((agora - inicioMs) / (fimMs - inicioMs) * 100)
+              )
+            );
+
+      const restante = fimMs
+        ? Math.max(0, Math.ceil((fimMs - agora) / 86400000))
+        : 0;
+
+      const status = percentual >= 100
+        ? "Concluída"
+        : inicioMs && agora < inicioMs
+          ? "Agendada"
+          : fimMs && agora > fimMs
+            ? "Prazo encerrado"
+            : "Em andamento";
+
+      const id = escapar(m.id);
+
+      return `
+        <article class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-1 self-stretch rounded-full shrink-0"
+              style="background:${cor}"></div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between gap-2 items-start">
+                <h3 class="font-semibold break-words">${nome}</h3>
+                <span class="cat shrink-0"
+                  style="color:${cor};background:${cor}18">
+                  ${categoria.nome}
+                </span>
+              </div>
+
+              <p class="text-xs text-zinc-500 mt-2">
+                ${formatarData(inicio)} → ${formatarData(fim)}
+              </p>
+
+              <div class="flex justify-between text-xs mt-4 mb-2">
+                <span class="text-zinc-400">Tempo decorrido</span>
+                <span>${tempo}%</span>
+              </div>
+
+              <div class="progress">
+                <div style="width:${tempo}%;background:${cor};opacity:.55"></div>
+              </div>
+
+              <div class="flex justify-between text-xs mt-4 mb-2">
+                <span class="text-zinc-400">Realização</span>
+                <span>${percentual}%</span>
+              </div>
+
+              <div class="progress">
+                <div style="width:${percentual}%;background:${cor}"></div>
+              </div>
+
+              <div class="flex justify-between items-center gap-2 mt-4">
+                <span class="text-xs text-zinc-500">
+                  ${percentual >= 100
+                    ? "Meta concluída"
+                    : !fimMs || restante === 0
+                      ? "Prazo encerrado"
+                      : restante + " dias restantes"}
+                  · ${status}
+                </span>
+
+                <div class="flex gap-3 text-zinc-400 shrink-0">
+                  ${percentual < 100 ? `
+                    <button type="button" data-acao="concluir"
+                      data-id="${id}" title="Concluir" aria-label="Concluir meta">
+                      <i data-lucide="check" class="w-4 h-4"></i>
+                    </button>` : ""}
+
+                  <button type="button" data-acao="editar"
+                    data-id="${id}" title="Editar" aria-label="Editar meta">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                  </button>
+
+                  <button type="button" data-acao="excluir"
+                    data-id="${id}" title="Excluir" aria-label="Excluir meta">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>`;
+    }).join("");
+
+    atualizarIcones();
+
+    root.querySelectorAll("#metas-filtros [data-f]").forEach(botao => {
+      const ativo = botao.dataset.f === filtro;
+      botao.className =
+        "filter shrink-0 rounded-full px-4 py-2 text-xs " +
+        (ativo
+          ? "bg-white text-black"
+          : "bg-zinc-900 text-zinc-400");
+      botao.setAttribute("aria-pressed", String(ativo));
+    });
+  }
+
+  async function salvar(evento) {
+    evento.preventDefault();
+    if (ocupado) return;
+
+    if (!metasDb) {
+      alert("Firebase indisponível.");
+      return;
+    }
+
+    const inicio = $("inicio").value;
+    const fim = $("fim").value;
+    const nome = $("nome").value.trim();
+
+    if (!nome || !inicio || !fim) {
+      alert("Preencha todos os campos.");
+      return;
+    }
+
+    if (fim < inicio) {
+      alert("A data final deve ser igual ou posterior à inicial.");
+      return;
+    }
+
+    const progresso = Number($("pct").value);
+
+    const dados = {
+      nome,
+      tipo: $("tipo").value,
+      inicio,
+      fim,
+      progresso,
+      concluida: progresso === 100
+    };
+
+    ocupado = true;
+    $("salvar").disabled = true;
+    $("salvar").textContent = "Salvando...";
+
+    try {
+      if (editando) {
+        await updateDoc(doc(metasDb, "metas", editando), dados);
+      } else {
+        await addDoc(collection(metasDb, "metas"), {
+          ...dados,
+          criadoEm: Date.now()
+        });
+      }
+
+      fecharFormulario();
+      await carregar();
+    } catch (erro) {
+      console.error("Erro ao salvar meta:", erro);
+      alert("Erro ao salvar. Verifique as regras do Firestore.");
+    } finally {
+      ocupado = false;
+      $("salvar").disabled = false;
+      $("salvar").textContent = "Salvar meta";
+    }
+  }
+
+  async function executarAcao(acao, id) {
+    const meta = metas.find(m => m.id === id);
+    if (!meta) return;
+
+    try {
+      if (acao === "editar") {
+        abrirFormulario(meta);
+        return;
+      }
+
+      if (acao === "excluir") {
+        if (!confirm("Excluir esta meta?")) return;
+
+        await deleteDoc(doc(metasDb, "metas", id));
+      }
+
+      if (acao === "concluir") {
+        await updateDoc(doc(metasDb, "metas", id), {
+          progresso: 100,
+          concluida: true
+        });
+      }
+
+      await carregar();
+    } catch (erro) {
+      console.error("Erro ao atualizar meta:", erro);
+      alert("Não foi possível realizar a operação.");
+    }
+  }
+
+  $("nova").addEventListener("click", () => abrirFormulario());
+  $("cancelar").addEventListener("click", fecharFormulario);
+  $("pct").addEventListener("input", () => {
+    $("valor-pct").textContent = $("pct").value;
+  });
+
+  $("form").addEventListener("submit", salvar);
+
+  $("filtros").addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-f]");
+    if (!botao) return;
+
+    filtro = botao.dataset.f;
+    renderizar();
+  });
+
+  $("lista").addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-acao]");
+    if (!botao) return;
+
+    executarAcao(botao.dataset.acao, botao.dataset.id);
+  });
+
+  $("voltar").addEventListener("click", () => {
+    if (history.length > 1) history.back();
+    else location.href = "/";
+  });
+
+  carregar();
+  atualizarIcones();
+}
+
+function verificarMetas() {
+  const root = document.getElementById("metas-app");
+
+  if (root && root.dataset.metasInicializadas !== "true") {
+    iniciarMetas(root);
+  }
+}
+
+verificarMetas();
+
+const observadorMetas = new MutationObserver(verificarMetas);
+observadorMetas.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+</script>
+
+<script type="module">
+import {
+  initializeApp,
+  getApps,
+  getApp
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD-xzRjMRVUpey19g745DvPjjpCApqSHVE",
+  authDomain: "myops-d7525.firebaseapp.com",
+  projectId: "myops-d7525",
+  storageBucket: "myops-d7525.firebasestorage.app",
+  messagingSenderId: "247824192162",
+  appId: "1:247824192162:web:77c91ab1e3df855dc7fdfb"
+};
+
+let db;
+
+const dias = [
+  { id: 1, nome: "Segunda", curto: "SEG" },
+  { id: 2, nome: "Terça", curto: "TER" },
+  { id: 3, nome: "Quarta", curto: "QUA" },
+  { id: 4, nome: "Quinta", curto: "QUI" },
+  { id: 5, nome: "Sexta", curto: "SEX" },
+  { id: 6, nome: "Sábado", curto: "SÁB" },
+  { id: 0, nome: "Domingo", curto: "DOM" }
+];
+
+const periodos = [
+  { nome: "Manhã", icone: "sun" },
+  { nome: "Tarde", icone: "sunset" },
+  { nome: "Noite", icone: "moon" }
+];
+
+function inicializarRotina(root) {
+  if (root.dataset.rotinaInicializada === "true") return;
+
+  root.dataset.rotinaInicializada = "true";
+
+  if (!db) {
+    const app = getApps().length
+      ? getApp()
+      : initializeApp(firebaseConfig);
+
+    db = getFirestore(app);
+  }
+
+  const tabela = collection(db, "atividades");
+  const $ = id => root.querySelector(`#${id}`);
+
+  let diaSelecionado = new Date().getDay();
+  let atividades = [];
+  let ocupado = false;
+
+  function icone(nome, classe = "w-4 h-4") {
+    const i = document.createElement("i");
+    i.setAttribute("data-lucide", nome);
+    i.className = classe;
+    return i;
+  }
+
+  function el(tag, classe = "", texto = "") {
+    const node = document.createElement(tag);
+    node.className = classe;
+    node.textContent = texto;
+    return node;
+  }
+
+  function atualizarIcones() {
+    if (window.lucide) {
+      window.lucide.createIcons({ root });
+    }
+  }
+
+  function periodoDaAtividade(hora) {
+    if (hora < "12:00" && hora >= "05:00") return "Manhã";
+    if (hora >= "12:00" && hora < "18:00") return "Tarde";
+    return "Noite";
+  }
+
+  function mostrarDias() {
+    const nav = $("dias");
+    nav.replaceChildren();
+
+    dias.forEach(dia => {
+      const ativo = dia.id === diaSelecionado;
+
+      const botao = el(
+        "button",
+        `rounded-xl py-3 flex flex-col items-center gap-1 ${
+          ativo
+            ? "bg-gray-900 text-white"
+            : "bg-gray-50 text-gray-600"
+        }`
+      );
+
+      botao.type = "button";
+      botao.setAttribute("aria-pressed", String(ativo));
+      botao.setAttribute("aria-label", dia.nome);
+
+      botao.append(
+        el("span", "text-xs font-semibold", dia.curto),
+        el(
+          "span",
+          "text-xs opacity-70",
+          String(dia.id === 0 ? 7 : dia.id)
+        )
+      );
+
+      botao.addEventListener("click", () => {
+        diaSelecionado = dia.id;
+        mostrarDias();
+        mostrarAgenda();
+      });
+
+      nav.append(botao);
+    });
+  }
+
+  function mostrarAgenda() {
+    const agenda = $("agenda");
+    agenda.replaceChildren();
+
+    const dia = dias.find(d => d.id === diaSelecionado);
+
+    agenda.append(
+      el("h2", "text-lg font-semibold", dia.nome)
+    );
+
+    const doDia = atividades
+      .filter(a => Number(a.dia) === diaSelecionado)
+      .sort((a, b) =>
+        (a.inicio || "").localeCompare(b.inicio || "")
+      );
+
+    periodos.forEach(periodo => {
+      const secao = el("section", "space-y-3");
+
+      const cabecalho = el(
+        "div",
+        "flex items-center gap-2 text-gray-500"
+      );
+
+      cabecalho.append(
+        icone(periodo.icone, "w-5 h-5"),
+        el("h3", "text-sm font-semibold text-gray-700", periodo.nome)
+      );
+
+      secao.append(cabecalho);
+
+      const itens = doDia.filter(a =>
+        periodoDaAtividade(a.inicio || "") === periodo.nome
+      );
+
+      if (!itens.length) {
+        secao.append(
+          el("p", "text-sm text-gray-400 pl-7", "Livre")
+        );
+      }
+
+      itens.forEach(a => {
+        const card = el(
+          "article",
+          "border border-gray-200 rounded-xl p-3 flex items-center gap-3"
+        );
+
+        const faixa = el(
+          "div",
+          "w-1 self-stretch rounded-full bg-gray-300"
+        );
+
+        const info = el("div", "flex-1 min-w-0");
+
+        info.append(
+          el("p", "font-medium break-words", a.nome || "Sem nome"),
+          el(
+            "p",
+            "text-sm text-gray-500 mt-1",
+            `${a.inicio || "--:--"} – ${a.fim || "--:--"}`
+          ),
+          el(
+            "p",
+            "text-xs text-gray-400 mt-1",
+            a.tipo === "lazer" ? "Lazer" : "Trabalho físico"
+          )
+        );
+
+        const acoes = el("div", "flex items-center gap-1");
+
+        const editar = el(
+          "button",
+          "p-2 rounded-lg hover:bg-gray-100"
+        );
+
+        editar.type = "button";
+        editar.title = "Editar atividade";
+        editar.setAttribute("aria-label", "Editar " + a.nome);
+        editar.append(icone("pencil"));
+        editar.addEventListener("click", () => abrirFormulario(a));
+
+        const excluir = el(
+          "button",
+          "p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-gray-50"
+        );
+
+        excluir.type = "button";
+        excluir.title = "Excluir atividade";
+        excluir.setAttribute("aria-label", "Excluir " + a.nome);
+        excluir.append(icone("trash-2"));
+        excluir.addEventListener("click", () => excluirAtividade(a));
+
+        acoes.append(editar, excluir);
+        card.append(faixa, info, acoes);
+        secao.append(card);
+      });
+
+      agenda.append(secao);
+    });
+
+    atualizarIcones();
+  }
+
+  function abrirFormulario(a = null) {
+    $("form").reset();
+
+    $("atividadeId").value = a?.id || "";
+    $("tituloForm").textContent = a
+      ? "Editar atividade"
+      : "Nova atividade";
+
+    $("nome").value = a?.nome || "";
+    $("dia").value = String(a?.dia ?? diaSelecionado);
+    $("inicio").value = a?.inicio || "";
+    $("fim").value = a?.fim || "";
+    $("tipo").value = a?.tipo || "trabalho_fisico";
+
+    $("form").classList.remove("hidden");
+    $("form").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+    $("nome").focus();
+    atualizarIcones();
+  }
+
+  async function excluirAtividade(a) {
+    if (!confirm(`Excluir a atividade "${a.nome}"?`)) return;
+
+    try {
+      $("status").textContent = "Excluindo...";
+
+      await deleteDoc(doc(db, "atividades", a.id));
+      await carregar();
+    } catch (erro) {
+      console.error(erro);
+      alert("Não foi possível excluir: " + erro.message);
+      $("status").textContent = "Erro ao excluir.";
+    }
+  }
+
+  async function carregar() {
+    $("status").textContent = "Carregando rotina...";
+
+    try {
+      const snapshot = await getDocs(tabela);
+
+      atividades = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      $("status").textContent =
+        `${atividades.length} atividade(s) na semana`;
+
+      mostrarDias();
+      mostrarAgenda();
+    } catch (erro) {
+      console.error("Erro ao carregar rotina:", erro);
+      $("status").textContent =
+        "Erro ao carregar. Confira o Firebase.";
+    }
+  }
+
+  $("nova").addEventListener("click", () => abrirFormulario());
+  $("novaFixa").addEventListener("click", () => abrirFormulario());
+
+  $("fechar").addEventListener("click", () => {
+    $("form").classList.add("hidden");
+  });
+
+  $("cancelar").addEventListener("click", () => {
+    $("form").classList.add("hidden");
+  });
+
+  $("form").addEventListener("submit", async evento => {
+    evento.preventDefault();
+
+    if (ocupado) return;
+
+    const nome = $("nome").value.trim();
+    const inicio = $("inicio").value;
+    const fim = $("fim").value;
+
+    if (!nome || !inicio || !fim) {
+      alert("Preencha todos os campos.");
+      return;
+    }
+
+    if (fim <= inicio) {
+      alert("O horário final deve ser posterior ao inicial.");
+      return;
+    }
+
+    const dados = {
+      nome,
+      dia: Number($("dia").value),
+      inicio,
+      fim,
+      tipo: $("tipo").value,
+      atualizadoEm: serverTimestamp()
+    };
+
+    ocupado = true;
+    $("salvar").disabled = true;
+    $("salvar").textContent = "Salvando...";
+
+    try {
+      const id = $("atividadeId").value;
+
+      if (id) {
+        await updateDoc(doc(db, "atividades", id), dados);
+      } else {
+        await addDoc(tabela, {
+          ...dados,
+          criadoEm: serverTimestamp()
+        });
+      }
+
+      diaSelecionado = dados.dia;
+      $("form").classList.add("hidden");
+
+      await carregar();
+    } catch (erro) {
+      console.error("Erro ao salvar atividade:", erro);
+      alert("Erro ao salvar: " + erro.message);
+    } finally {
+      ocupado = false;
+      $("salvar").disabled = false;
+      $("salvar").textContent = "Salvar atividade";
+    }
+  });
+
+  carregar();
+  atualizarIcones();
+}
+
+function verificarRotina() {
+  const root = document.getElementById("rotina-app");
+
+  if (root) {
+    inicializarRotina(root);
+  }
+}
+
+verificarRotina();
+
+const observadorRotina = new MutationObserver(() => {
+  verificarRotina();
+});
+
+observadorRotina.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+</script>
 
 
 <script type="module">

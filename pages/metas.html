@@ -1,99 +1,151 @@
 
-<section class="space-y-6 p-4 md:p-8">
-  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <p class="text-xs font-bold uppercase tracking-[0.25em] text-blue-400">Planejamento estratégico</p>
-      <h1 class="mt-2 text-3xl font-bold text-white">Metas & Execução</h1>
-      <p class="mt-2 text-sm text-zinc-400">Do longo prazo à próxima ação.</p>
-    </div>
-    <button type="button" onclick="novaMeta()" class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">
-      + Nova meta
+<div id="metas-app" class="min-h-screen bg-zinc-950 text-zinc-50"
+  style="font-family:Arial,sans-serif">
+
+  <style>
+    #metas-app input:not([type="range"]),
+    #metas-app select {
+      background:#18181b;
+      border:1px solid #27272a;
+      border-radius:10px;
+      padding:11px;
+      width:100%;
+      color:#fff;
+      outline:none;
+    }
+    #metas-app button { transition:.15s; }
+    #metas-app .cat {
+      font-size:11px;
+      padding:5px 9px;
+      border-radius:20px;
+      font-weight:600;
+    }
+    #metas-app .progress {
+      height:4px;
+      background:#27272a;
+      border-radius:9px;
+      overflow:hidden;
+    }
+    #metas-app .progress div {
+      height:100%;
+      border-radius:9px;
+    }
+  </style>
+
+  <main class="max-w-xl mx-auto p-4 pb-12">
+
+    <button id="metas-voltar" type="button"
+      class="flex items-center gap-2 text-sm text-zinc-400 hover:text-white py-2">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i>
+      Voltar
     </button>
-  </div>
 
-  <div id="resumoMetas" class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-    <div class="rounded-2xl border border-white/10 bg-[#111] p-4">
-      <p class="text-xs text-zinc-400">Metas totais</p>
-      <p id="totalMetas" class="mt-2 text-2xl font-bold text-white">—</p>
-    </div>
-    <div class="rounded-2xl border border-white/10 bg-[#111] p-4">
-      <p class="text-xs text-zinc-400">Até 7 dias</p>
-      <p id="metas7Dias" class="mt-2 text-2xl font-bold text-blue-400">—</p>
-    </div>
-    <div class="rounded-2xl border border-white/10 bg-[#111] p-4">
-      <p class="text-xs text-zinc-400">Até 3 meses</p>
-      <p id="metas3Meses" class="mt-2 text-2xl font-bold text-white">—</p>
-    </div>
-    <div class="rounded-2xl border border-white/10 bg-[#111] p-4">
-      <p class="text-xs text-zinc-400">Concluídas</p>
-      <p id="metasConcluidas" class="mt-2 text-2xl font-bold text-green-400">—</p>
-    </div>
-  </div>
+    <header class="flex justify-between items-center py-4 mb-5">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">
+          Metas<span class="text-zinc-500">.</span>
+        </h1>
+        <p class="text-xs text-zinc-500 mt-1">Direção, tempo e progresso.</p>
+      </div>
 
-  <div class="flex flex-wrap gap-2" id="filtrosMetas">
-    <button type="button" data-filtro="todas" class="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white">Todas</button>
-    <button type="button" data-filtro="3dias" class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">3 dias</button>
-    <button type="button" data-filtro="7dias" class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">7 dias</button>
-    <button type="button" data-filtro="3meses" class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">3 meses</button>
-    <button type="button" data-filtro="6meses" class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">6 meses</button>
-    <button type="button" data-filtro="1ano" class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">1 ano</button>
-    <button type="button" data-filtro="3anos" class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">3 anos</button>
-    <button type="button" data-filtro="5anos" class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300">5 anos</button>
-  </div>
+      <button id="metas-nova"
+        class="bg-white text-black rounded-xl px-4 py-3 text-sm font-semibold flex gap-2 items-center">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        Nova
+      </button>
+    </header>
 
-  <form id="metasForm" class="hidden space-y-5 rounded-2xl border border-white/10 bg-[#111] p-5 md:p-7">
-    <input type="hidden" id="metaId">
+    <section class="grid grid-cols-3 gap-2 mb-6">
+      <div class="bg-zinc-900 rounded-xl p-3">
+        <p class="text-xs text-zinc-500">Total</p>
+        <p id="metas-total" class="text-xl font-bold mt-1">0</p>
+      </div>
+      <div class="bg-zinc-900 rounded-xl p-3">
+        <p class="text-xs text-zinc-500">Ativas</p>
+        <p id="metas-ativas" class="text-xl font-bold mt-1">0</p>
+      </div>
+      <div class="bg-zinc-900 rounded-xl p-3">
+        <p class="text-xs text-zinc-500">Concluídas</p>
+        <p id="metas-feitas" class="text-xl font-bold mt-1">0</p>
+      </div>
+    </section>
 
-    <div>
-      <label for="tituloMeta" class="mb-2 block text-sm font-medium text-zinc-300">Título da meta</label>
-      <input id="tituloMeta" required maxlength="150" placeholder="Ex.: Construir uma renda mensal de R$ 10.000" class="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-blue-500">
-    </div>
+    <form id="metas-form"
+      class="hidden bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 space-y-3">
 
-    <div>
-      <label for="prazoMeta" class="mb-2 block text-sm font-medium text-zinc-300">Horizonte da meta</label>
-      <select id="prazoMeta" required class="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-blue-500">
-        <option value="3dias">Próximos 3 dias</option>
-        <option value="7dias">Próximos 7 dias</option>
-        <option value="3meses">Próximos 3 meses</option>
-        <option value="6meses">Próximos 6 meses</option>
-        <option value="1ano">1 ano</option>
-        <option value="3anos">3 anos</option>
-        <option value="5anos">5 anos (opcional)</option>
+      <h2 id="metas-titulo-form" class="font-semibold">Nova meta</h2>
+
+      <input id="metas-nome" placeholder="Qual é a meta?"
+        required maxlength="120">
+
+      <select id="metas-tipo">
+        <option value="espiritual">Espiritual</option>
+        <option value="saude">Saúde</option>
+        <option value="trabalho">Trabalho</option>
+        <option value="pessoal">Pessoal</option>
       </select>
-    </div>
 
-    <div>
-      <label for="dataLimiteMeta" class="mb-2 block text-sm font-medium text-zinc-300">Data-alvo (opcional)</label>
-      <input id="dataLimiteMeta" type="date" class="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-blue-500">
-    </div>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="text-xs text-zinc-500">
+          De
+          <input id="metas-inicio" type="date" required class="mt-2">
+        </label>
+        <label class="text-xs text-zinc-500">
+          Até
+          <input id="metas-fim" type="date" required class="mt-2">
+        </label>
+      </div>
 
-    <div>
-      <label for="desfruteMeta" class="mb-2 block text-sm font-medium text-zinc-300">Desfrute — por que isso importa?</label>
-      <textarea id="desfruteMeta" rows="3" placeholder="O que essa conquista vai mudar na sua vida?" class="w-full resize-y rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-blue-500"></textarea>
-    </div>
+      <label class="block text-xs text-zinc-500">
+        Realização: <span id="metas-valor-pct">0</span>%
+        <input id="metas-pct" type="range" min="0" max="100"
+          value="0" class="mt-2 w-full accent-white">
+      </label>
 
-    <div>
-      <label for="acoesMeta" class="mb-2 block text-sm font-medium text-zinc-300">Ações — como vou alcançar?</label>
-      <textarea id="acoesMeta" rows="5" required placeholder="Uma ação por linha. Ex.:&#10;Prospectar 10 clientes&#10;Publicar uma oferta&#10;Fazer acompanhamento diário" class="w-full resize-y rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-blue-500"></textarea>
-    </div>
+      <div class="flex gap-2 pt-1">
+        <button id="metas-salvar" type="submit"
+          class="flex-1 bg-white text-black rounded-xl py-3 font-semibold text-sm">
+          Salvar meta
+        </button>
+        <button id="metas-cancelar" type="button"
+          class="px-4 rounded-xl bg-zinc-800 text-sm">
+          Cancelar
+        </button>
+      </div>
+    </form>
 
-    <div>
-      <label for="statusMeta" class="mb-2 block text-sm font-medium text-zinc-300">Status</label>
-      <select id="statusMeta" class="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-blue-500">
-        <option value="planejada">Planejada</option>
-        <option value="em andamento">Em andamento</option>
-        <option value="concluida">Concluída</option>
-        <option value="pausada">Pausada</option>
-      </select>
-    </div>
+    <nav class="flex gap-2 overflow-x-auto pb-4" id="metas-filtros">
+      <button data-f="todas"
+        class="filter shrink-0 rounded-full bg-white text-black px-4 py-2 text-xs">
+        Todas
+      </button>
+      <button data-f="espiritual"
+        class="filter shrink-0 rounded-full bg-zinc-900 px-4 py-2 text-xs">
+        Espiritual
+      </button>
+      <button data-f="saude"
+        class="filter shrink-0 rounded-full bg-zinc-900 px-4 py-2 text-xs">
+        Saúde
+      </button>
+      <button data-f="trabalho"
+        class="filter shrink-0 rounded-full bg-zinc-900 px-4 py-2 text-xs">
+        Trabalho
+      </button>
+      <button data-f="pessoal"
+        class="filter shrink-0 rounded-full bg-zinc-900 px-4 py-2 text-xs">
+        Pessoal
+      </button>
+    </nav>
 
-    <div class="flex flex-wrap gap-3">
-      <button type="submit" class="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-500">Salvar meta</button>
-      <button type="button" onclick="cancelarMeta()" class="rounded-xl border border-white/10 px-6 py-3 text-zinc-300 hover:bg-white/5">Cancelar</button>
-    </div>
-  </form>
+    <section id="metas-lista" class="space-y-3"></section>
 
-  <div id="listaMetas" class="grid gap-4 md:grid-cols-2">
-    <p class="text-sm text-zinc-500">Carregando metas...</p>
-  </div>
-</section>
+    <p id="metas-vazio"
+      class="hidden text-center text-sm text-zinc-500 py-12">
+      Nenhuma meta por aqui.
+    </p>
+
+    <p id="metas-mensagem"
+      class="text-xs text-zinc-500 text-center mt-6"
+      role="status"></p>
+  </main>
+</div>
