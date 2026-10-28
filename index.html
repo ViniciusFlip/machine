@@ -849,7 +849,7 @@
         </a>
 
         <!-- TIMELINE -->
-        <a href="/metas.html" data-page="quero" class="flex h-full flex-1 flex-col items-center justify-center gap-1 text-slate-400 active:text-white">
+        <a href="#" data-page="metas" class="flex h-full flex-1 flex-col items-center justify-center gap-1 text-slate-400 active:text-white">
 
            <img src="assets/images/free.gif" class="w-4 h-4" alt="">
             <span class="text-[9px] font-medium uppercase           ">
@@ -1045,26 +1045,18 @@ statusObserver.observe(document.body, {
 });
 </script>
 
+
 <script type="module">
 import {
-  initializeApp,
-  getApps,
-  getApp
+  initializeApp, getApps, getApp
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 
 import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy
+  getFirestore, collection, addDoc, getDocs, doc,
+  updateDoc, deleteDoc, query, orderBy
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-const metasFirebaseConfig = {
+const configMetas = {
   apiKey: "AIzaSyD-xzRjMRVUpey19g745DvPjjpCApqSHVE",
   authDomain: "myops-d7525.firebaseapp.com",
   projectId: "myops-d7525",
@@ -1073,24 +1065,23 @@ const metasFirebaseConfig = {
   appId: "1:247824192162:web:77c91ab1e3df855dc7fdfb"
 };
 
-const categoriasMetas = {
+const categorias = {
   espiritual: { nome: "Espiritual", cor: "#a78bfa" },
   saude: { nome: "Saúde", cor: "#34d399" },
   trabalho: { nome: "Trabalho", cor: "#60a5fa" },
   pessoal: { nome: "Pessoal", cor: "#fbbf24" }
 };
 
-let metasDb;
+const appMetas = getApps().length
+  ? getApp()
+  : initializeApp(configMetas);
+
+const dbMetas = getFirestore(appMetas);
+const colecaoMetas = collection(dbMetas, "metas");
 
 function iniciarMetas(root) {
   if (root.dataset.metasInicializadas === "true") return;
   root.dataset.metasInicializadas = "true";
-
-  const app = getApps().length
-    ? getApp()
-    : initializeApp(metasFirebaseConfig);
-
-  metasDb = getFirestore(app);
 
   const $ = id => root.querySelector("#metas-" + id);
 
@@ -1108,28 +1099,41 @@ function iniciarMetas(root) {
     ].join("-");
   };
 
-  function atualizarIcones() {
-    if (window.lucide) {
-      window.lucide.createIcons({ root });
-    }
-  }
-
-  function escapar(valor) {
-    return String(valor ?? "").replace(/[&<>"']/g, c => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
+  function escapar(v) {
+    return String(v ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      '"': "&quot;", "'": "&#39;"
     })[c]);
   }
 
-  function formatarData(valor) {
-    if (!valor) return "—";
-    const partes = valor.split("-").map(Number);
-    if (partes.length !== 3 || partes.some(n => !n)) return "—";
-    return new Date(partes[0], partes[1] - 1, partes[2])
-      .toLocaleDateString("pt-BR");
+  function icones() {
+    if (window.lucide) window.lucide.createIcons({ root });
+  }
+
+  function dataBR(v) {
+    if (!v) return "—";
+    const p = v.split("-").map(Number);
+    return p.length === 3
+      ? new Date(p[0], p[1] - 1, p[2]).toLocaleDateString("pt-BR")
+      : "—";
+  }
+
+  function resultados(meta) {
+    return Array.isArray(meta.microResultados)
+      ? meta.microResultados
+      : [];
+  }
+
+  function progressoMeta(meta) {
+    const micros = resultados(meta);
+
+    if (micros.length) {
+      return Math.round(
+        micros.filter(m => m.concluido).length / micros.length * 100
+      );
+    }
+
+    return Math.max(0, Math.min(100, Number(meta.progresso) || 0));
   }
 
   function abrirFormulario(meta = null) {
@@ -1147,12 +1151,8 @@ function iniciarMetas(root) {
     $("salvar").textContent = "Salvar meta";
     $("form").classList.remove("hidden");
 
-    $("form").scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-
-    atualizarIcones();
+    $("form").scrollIntoView({ behavior: "smooth", block: "start" });
+    icones();
   }
 
   function fecharFormulario() {
@@ -1165,29 +1165,27 @@ function iniciarMetas(root) {
 
     try {
       const snap = await getDocs(
-        query(collection(metasDb, "metas"), orderBy("criadoEm", "desc"))
+        query(colecaoMetas, orderBy("criadoEm", "desc"))
       );
 
-      metas = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-
+      metas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderizar();
       $("mensagem").textContent = "";
-    } catch (erro) {
-      console.error("Erro ao carregar metas:", erro);
+    } catch (e) {
+      console.error(e);
       $("mensagem").textContent =
-        "Não foi possível carregar. Verifique o Firestore e as regras de acesso.";
+        "Erro ao carregar metas. Verifique o Firestore e suas regras.";
     }
   }
 
   function renderizar() {
     $("total").textContent = metas.length;
+
     $("ativas").textContent =
-      metas.filter(m => Number(m.progresso || 0) < 100).length;
+      metas.filter(m => progressoMeta(m) < 100).length;
+
     $("feitas").textContent =
-      metas.filter(m => Number(m.progresso || 0) >= 100).length;
+      metas.filter(m => progressoMeta(m) >= 100).length;
 
     const itens = metas.filter(m =>
       filtro === "todas" || m.tipo === filtro
@@ -1196,147 +1194,179 @@ function iniciarMetas(root) {
     $("vazio").classList.toggle("hidden", itens.length > 0);
 
     $("lista").innerHTML = itens.map(m => {
-      const categoria = categoriasMetas[m.tipo] || categoriasMetas.pessoal;
-      const cor = categoria.cor;
-      const nome = escapar(m.nome);
-      const inicio = m.inicio || "";
-      const fim = m.fim || m.inicio || "";
-      const percentual = Math.max(
-        0,
-        Math.min(100, Number(m.progresso) || 0)
-      );
+      const cat = categorias[m.tipo] || categorias.pessoal;
+      const cor = cat.cor;
+      const micros = resultados(m);
+      const pct = progressoMeta(m);
 
-      const inicioMs = inicio
-        ? new Date(inicio + "T00:00:00").getTime()
+      const inicioMs = m.inicio
+        ? new Date(m.inicio + "T00:00:00").getTime()
         : 0;
 
-      const fimMs = fim
-        ? new Date(fim + "T23:59:59").getTime()
+      const fimMs = m.fim
+        ? new Date(m.fim + "T23:59:59").getTime()
         : 0;
 
       const agora = Date.now();
 
-      const tempo = !inicioMs || !fimMs
-        ? 0
-        : fimMs <= inicioMs
-          ? (agora >= fimMs ? 100 : 0)
-          : Math.max(
-              0,
-              Math.min(
-                100,
-                Math.round((agora - inicioMs) / (fimMs - inicioMs) * 100)
-              )
-            );
+      const tempo = !inicioMs || !fimMs ? 0 :
+        fimMs <= inicioMs ? (agora >= fimMs ? 100 : 0) :
+        Math.max(0, Math.min(100,
+          Math.round((agora - inicioMs) / (fimMs - inicioMs) * 100)
+        ));
 
       const restante = fimMs
-        ? Math.max(0, Math.ceil((fimMs - agora) / 86400000))
-        : 0;
+        ? Math.ceil((fimMs - agora) / 86400000)
+        : null;
 
-      const status = percentual >= 100
-        ? "Concluída"
-        : inicioMs && agora < inicioMs
-          ? "Agendada"
-          : fimMs && agora > fimMs
-            ? "Prazo encerrado"
-            : "Em andamento";
+      const status = pct >= 100 ? "Concluída" :
+        inicioMs && agora < inicioMs ? "Agendada" :
+        fimMs && agora > fimMs ? "Prazo encerrado" :
+        "Em andamento";
 
+      const microsFeitos = micros.filter(x => x.concluido).length;
       const id = escapar(m.id);
 
+      const listaMicros = micros.map((micro, i) => `
+        <label class="flex items-center gap-3 py-2.5 cursor-pointer">
+          <input type="checkbox"
+            class="micro-check"
+            style="--meta-cor:${cor}"
+            data-acao="micro-toggle"
+            data-id="${id}"
+            data-index="${i}"
+            ${micro.concluido ? "checked" : ""}>
+          <span class="text-sm flex-1 min-w-0 break-words ${micro.concluido ? "micro-feito" : "text-zinc-300"}">
+            ${escapar(micro.nome)}
+          </span>
+          <button type="button"
+            class="text-zinc-600 hover:text-red-400 p-1"
+            data-acao="remover-micro"
+            data-id="${id}"
+            data-index="${i}"
+            aria-label="Excluir micro-resultado"
+            title="Excluir">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </label>
+      `).join("");
+
       return `
-        <article class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+        <article data-meta-card="${id}"
+          class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
           <div class="flex items-start gap-3">
             <div class="w-1 self-stretch rounded-full shrink-0"
               style="background:${cor}"></div>
 
             <div class="flex-1 min-w-0">
               <div class="flex justify-between gap-2 items-start">
-                <h3 class="font-semibold break-words">${nome}</h3>
+                <h3 class="font-semibold break-words">${escapar(m.nome)}</h3>
                 <span class="cat shrink-0"
                   style="color:${cor};background:${cor}18">
-                  ${categoria.nome}
+                  ${cat.nome}
                 </span>
               </div>
 
               <p class="text-xs text-zinc-500 mt-2">
-                ${formatarData(inicio)} → ${formatarData(fim)}
+                ${dataBR(m.inicio)} → ${dataBR(m.fim)}
               </p>
 
               <div class="flex justify-between text-xs mt-4 mb-2">
                 <span class="text-zinc-400">Tempo decorrido</span>
                 <span>${tempo}%</span>
               </div>
-
               <div class="progress">
                 <div style="width:${tempo}%;background:${cor};opacity:.55"></div>
               </div>
 
               <div class="flex justify-between text-xs mt-4 mb-2">
                 <span class="text-zinc-400">Realização</span>
-                <span>${percentual}%</span>
+                <span>${pct}%</span>
               </div>
-
               <div class="progress">
-                <div style="width:${percentual}%;background:${cor}"></div>
+                <div style="width:${pct}%;background:${cor}"></div>
               </div>
 
-              <div class="flex justify-between items-center gap-2 mt-4">
-                <span class="text-xs text-zinc-500">
-                  ${percentual >= 100
-                    ? "Meta concluída"
-                    : !fimMs || restante === 0
-                      ? "Prazo encerrado"
-                      : restante + " dias restantes"}
-                  · ${status}
-                </span>
+              <div class="text-xs text-zinc-500 mt-2">
+                ${pct >= 100 ? "Meta concluída" :
+                  restante === null ? "Sem prazo" :
+                  restante < 0 ? "Prazo encerrado" :
+                  restante + " dias restantes"}
+                · ${status}
+              </div>
 
-                <div class="flex gap-3 text-zinc-400 shrink-0">
-                  ${percentual < 100 ? `
-                    <button type="button" data-acao="concluir"
-                      data-id="${id}" title="Concluir" aria-label="Concluir meta">
-                      <i data-lucide="check" class="w-4 h-4"></i>
-                    </button>` : ""}
-
-                  <button type="button" data-acao="editar"
-                    data-id="${id}" title="Editar" aria-label="Editar meta">
-                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                  </button>
-
-                  <button type="button" data-acao="excluir"
-                    data-id="${id}" title="Excluir" aria-label="Excluir meta">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                  </button>
+              <div class="border-t border-zinc-800 mt-4 pt-4">
+                <div class="flex justify-between items-center mb-2">
+                  <h4 class="text-sm font-semibold">Micro-resultados</h4>
+                  <span class="text-xs text-zinc-500">
+                    ${microsFeitos}/${micros.length}
+                  </span>
                 </div>
+
+                ${micros.length
+                  ? `<div class="divide-y divide-zinc-800">${listaMicros}</div>`
+                  : `<p class="text-xs text-zinc-500 py-2">Adicione pequenas etapas para avançar nesta meta.</p>`}
+
+                <form data-form-micro="${id}" class="flex gap-2 mt-3">
+                  <input name="microNome" maxlength="120"
+                    placeholder="Próximo pequeno resultado..."
+                    aria-label="Novo micro-resultado"
+                    required
+                    class="min-w-0 flex-1 text-sm">
+                  <button type="submit"
+                    class="rounded-xl px-3 bg-zinc-800 text-white"
+                    aria-label="Adicionar micro-resultado"
+                    title="Adicionar">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              </div>
+
+              <div class="flex justify-end gap-4 items-center mt-4 pt-3 border-t border-zinc-800 text-zinc-400">
+                ${pct < 100 ? `
+                  <button type="button" data-acao="concluir"
+                    data-id="${id}" title="Concluir meta"
+                    class="text-xs flex items-center gap-1">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Concluir
+                  </button>` : ""}
+
+                <button type="button" data-acao="editar"
+                  data-id="${id}" title="Editar meta">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+
+                <button type="button" data-acao="excluir"
+                  data-id="${id}" title="Excluir meta">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
               </div>
             </div>
           </div>
         </article>`;
     }).join("");
 
-    atualizarIcones();
-
-    root.querySelectorAll("#metas-filtros [data-f]").forEach(botao => {
-      const ativo = botao.dataset.f === filtro;
-      botao.className =
-        "filter shrink-0 rounded-full px-4 py-2 text-xs " +
-        (ativo
-          ? "bg-white text-black"
-          : "bg-zinc-900 text-zinc-400");
-      botao.setAttribute("aria-pressed", String(ativo));
+    root.querySelectorAll("#metas-filtros [data-f]").forEach(b => {
+      const ativo = b.dataset.f === filtro;
+      b.className = "filter shrink-0 rounded-full px-4 py-2 text-xs " +
+        (ativo ? "bg-white text-black" : "bg-zinc-900 text-zinc-400");
+      b.setAttribute("aria-pressed", String(ativo));
     });
+
+    icones();
+  }
+
+  async function atualizarMeta(id, alteracoes) {
+    await updateDoc(doc(dbMetas, "metas", id), alteracoes);
+    await carregar();
   }
 
   async function salvar(evento) {
     evento.preventDefault();
     if (ocupado) return;
 
-    if (!metasDb) {
-      alert("Firebase indisponível.");
-      return;
-    }
-
+    const nome = $("nome").value.trim();
     const inicio = $("inicio").value;
     const fim = $("fim").value;
-    const nome = $("nome").value.trim();
 
     if (!nome || !inicio || !fim) {
       alert("Preencha todos os campos.");
@@ -1348,15 +1378,13 @@ function iniciarMetas(root) {
       return;
     }
 
-    const progresso = Number($("pct").value);
-
     const dados = {
       nome,
       tipo: $("tipo").value,
       inicio,
       fim,
-      progresso,
-      concluida: progresso === 100
+      progresso: Number($("pct").value),
+      concluida: Number($("pct").value) === 100
     };
 
     ocupado = true;
@@ -1365,19 +1393,31 @@ function iniciarMetas(root) {
 
     try {
       if (editando) {
-        await updateDoc(doc(metasDb, "metas", editando), dados);
-      } else {
-        await addDoc(collection(metasDb, "metas"), {
+        const atual = metas.find(m => m.id === editando);
+        const micros = resultados(atual || {});
+
+        await updateDoc(doc(dbMetas, "metas", editando), {
           ...dados,
+          ...(micros.length ? {
+            progresso: Math.round(
+              micros.filter(x => x.concluido).length / micros.length * 100
+            ),
+            concluida: micros.every(x => x.concluido)
+          } : {})
+        });
+      } else {
+        await addDoc(colecaoMetas, {
+          ...dados,
+          microResultados: [],
           criadoEm: Date.now()
         });
       }
 
       fecharFormulario();
       await carregar();
-    } catch (erro) {
-      console.error("Erro ao salvar meta:", erro);
-      alert("Erro ao salvar. Verifique as regras do Firestore.");
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao salvar a meta.");
     } finally {
       ocupado = false;
       $("salvar").disabled = false;
@@ -1385,7 +1425,7 @@ function iniciarMetas(root) {
     }
   }
 
-  async function executarAcao(acao, id) {
+  async function executarAcao(acao, id, indice) {
     const meta = metas.find(m => m.id === id);
     if (!meta) return;
 
@@ -1396,27 +1436,105 @@ function iniciarMetas(root) {
       }
 
       if (acao === "excluir") {
-        if (!confirm("Excluir esta meta?")) return;
-
-        await deleteDoc(doc(metasDb, "metas", id));
+        if (!confirm("Excluir esta meta e seus micro-resultados?")) return;
+        await deleteDoc(doc(dbMetas, "metas", id));
+        await carregar();
+        return;
       }
 
       if (acao === "concluir") {
-        await updateDoc(doc(metasDb, "metas", id), {
-          progresso: 100,
-          concluida: true
-        });
+        if (resultados(meta).length) {
+          const micros = resultados(meta).map(m => ({
+            ...m,
+            concluido: true
+          }));
+          await atualizarMeta(id, {
+            microResultados: micros,
+            progresso: 100,
+            concluida: true
+          });
+        } else {
+          await atualizarMeta(id, {
+            progresso: 100,
+            concluida: true
+          });
+        }
+        return;
       }
 
-      await carregar();
-    } catch (erro) {
-      console.error("Erro ao atualizar meta:", erro);
-      alert("Não foi possível realizar a operação.");
+      if (acao === "micro-toggle" || acao === "remover-micro") {
+        const micros = resultados(meta).map(m => ({ ...m }));
+
+        if (!micros[indice]) return;
+
+        if (acao === "micro-toggle") {
+          micros[indice].concluido = !micros[indice].concluido;
+        } else {
+          if (!confirm("Remover este micro-resultado?")) return;
+          micros.splice(indice, 1);
+        }
+
+        const pct = micros.length
+          ? Math.round(micros.filter(m => m.concluido).length / micros.length * 100)
+          : 0;
+
+        await atualizarMeta(id, {
+          microResultados: micros,
+          progresso: pct,
+          concluida: micros.length > 0 && pct === 100
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível atualizar. Tente novamente.");
+    }
+  }
+
+  async function adicionarMicro(evento, id) {
+    evento.preventDefault();
+
+    const form = evento.target;
+    const campo = form.elements.microNome;
+    const nome = campo.value.trim();
+
+    if (!nome) return;
+
+    const meta = metas.find(m => m.id === id);
+    if (!meta) return;
+
+    const botao = form.querySelector('button[type="submit"]');
+    if (botao) botao.disabled = true;
+
+    try {
+      const micros = [
+        ...resultados(meta),
+        {
+          id: Date.now().toString() + "-" +
+            Math.random().toString(36).slice(2, 8),
+          nome,
+          concluido: false
+        }
+      ];
+
+      const pct = Math.round(
+        micros.filter(m => m.concluido).length / micros.length * 100
+      );
+
+      await atualizarMeta(id, {
+        microResultados: micros,
+        progresso: pct,
+        concluida: false
+      });
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível adicionar o micro-resultado.");
+      if (botao) botao.disabled = false;
     }
   }
 
   $("nova").addEventListener("click", () => abrirFormulario());
   $("cancelar").addEventListener("click", fecharFormulario);
+
   $("pct").addEventListener("input", () => {
     $("valor-pct").textContent = $("pct").value;
   });
@@ -1424,18 +1542,41 @@ function iniciarMetas(root) {
   $("form").addEventListener("submit", salvar);
 
   $("filtros").addEventListener("click", evento => {
-    const botao = evento.target.closest("[data-f]");
-    if (!botao) return;
-
-    filtro = botao.dataset.f;
+    const b = evento.target.closest("[data-f]");
+    if (!b) return;
+    filtro = b.dataset.f;
     renderizar();
   });
 
+  $("lista").addEventListener("submit", evento => {
+    const form = evento.target.closest("[data-form-micro]");
+    if (!form) return;
+    adicionarMicro(evento, form.dataset.formMicro);
+  });
+
+  $("lista").addEventListener("change", evento => {
+    const campo = evento.target.closest('[data-acao="micro-toggle"]');
+    if (!campo) return;
+
+    const meta = metas.find(m => m.id === campo.dataset.id);
+    if (!meta) return;
+
+    const indice = Number(campo.dataset.index);
+    const micros = resultados(meta);
+    if (!micros[indice]) return;
+
+    executarAcao("micro-toggle", campo.dataset.id, indice);
+  });
+
   $("lista").addEventListener("click", evento => {
-    const botao = evento.target.closest("[data-acao]");
+    const botao = evento.target.closest("button[data-acao]");
     if (!botao) return;
 
-    executarAcao(botao.dataset.acao, botao.dataset.id);
+    executarAcao(
+      botao.dataset.acao,
+      botao.dataset.id,
+      Number(botao.dataset.index)
+    );
   });
 
   $("voltar").addEventListener("click", () => {
@@ -1444,12 +1585,10 @@ function iniciarMetas(root) {
   });
 
   carregar();
-  atualizarIcones();
 }
 
 function verificarMetas() {
   const root = document.getElementById("metas-app");
-
   if (root && root.dataset.metasInicializadas !== "true") {
     iniciarMetas(root);
   }
@@ -1463,6 +1602,7 @@ observadorMetas.observe(document.body, {
   subtree: true
 });
 </script>
+
 
 <script type="module">
 import {
@@ -2600,6 +2740,380 @@ observadorRotina.observe(document.body, {
 })();
 </script>
 
+
+<script type="module">
+import {
+  initializeApp, getApps, getApp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+
+import {
+  getAuth, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+import {
+  getFirestore, doc, getDoc, setDoc,
+  collection, getDocs
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const cvConfig = {
+  apiKey: "AIzaSyD-xzRjMRVUpey19g745DvPjjpCApqSHVE",
+  authDomain: "myops-d7525.firebaseapp.com",
+  projectId: "myops-d7525",
+  storageBucket: "myops-d7525.firebasestorage.app",
+  messagingSenderId: "247824192162",
+  appId: "1:247824192162:web:77c91ab1e3df855dc7fdfb"
+};
+
+const cvApp = getApps().length ? getApp() : initializeApp(cvConfig);
+const cvAuth = getAuth(cvApp);
+const cvDb = getFirestore(cvApp);
+
+const camposCV = [
+  ["name", "Nome completo"],
+  ["title", "Título profissional"],
+  ["summary", "Resumo profissional"],
+  ["skills", "Competências"],
+  ["targetRoles", "Cargos desejados"],
+  ["workMode", "Modelo de trabalho"],
+  ["location", "Localização"],
+  ["linkedin", "LinkedIn"],
+  ["portfolio", "Portfólio"],
+  ["github", "GitHub"]
+];
+
+let cvUsuario = null;
+let cvHistorias = [];
+let cvAcademicos = [];
+let cvPerfil = {};
+let cvCarregando = false;
+let cvObserver;
+
+function iniciarCurriculo(root) {
+  if (!root || root.dataset.cvInicializado === "true") return;
+  root.dataset.cvInicializado = "true";
+
+  const $ = id => root.querySelector("#curriculo-" + id);
+
+  function escapar(valor) {
+    return String(valor ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      '"': "&quot;", "'": "&#39;"
+    })[c]);
+  }
+
+  function valorTexto(valor) {
+    if (Array.isArray(valor)) return valor.join(", ");
+    if (valor && typeof valor === "object") return "";
+    return String(valor ?? "");
+  }
+
+  function preencher(perfil) {
+    camposCV.forEach(([campo]) => {
+      const input = root.querySelector("#cv-" + campo);
+      if (input) input.value = valorTexto(perfil[campo]);
+    });
+  }
+
+  function lerFormulario() {
+    const dados = {};
+
+    camposCV.forEach(([campo]) => {
+      const input = root.querySelector("#cv-" + campo);
+      dados[campo] = input.value.trim();
+    });
+
+    return dados;
+  }
+
+  function dataBR(valor) {
+    if (!valor) return "";
+    const partes = String(valor).split("-");
+    if (partes.length === 3) {
+      return new Date(
+        Number(partes[0]), Number(partes[1]) - 1, Number(partes[2])
+      ).toLocaleDateString("pt-BR");
+    }
+    return String(valor);
+  }
+
+  function atualizarIcones() {
+    window.lucide?.createIcons({ root });
+  }
+
+  function renderizarHistorias() {
+    $("total-historias").textContent = cvHistorias.length;
+
+    if (!cvHistorias.length) {
+      $("historias").innerHTML = `
+        <div class="rounded-xl border border-neutral-800 p-4">
+          <p class="text-sm text-neutral-300">Nenhuma experiência cadastrada.</p>
+          <p class="text-xs text-neutral-500 mt-1">
+            Adicione sua trajetória no módulo de histórias profissionais.
+          </p>
+        </div>`;
+      return;
+    }
+
+    $("historias").innerHTML = cvHistorias.map(h => {
+      const periodo = [
+        dataBR(h.dataDe),
+        h.cargoAtual ? "Atual" : dataBR(h.dataAte)
+      ].filter(Boolean).join(" — ");
+
+      const funcoes = Array.isArray(h.funcoes)
+        ? h.funcoes
+        : String(h.funcoes || "").split(/\n/).filter(Boolean);
+
+      return `
+        <article class="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+          <h3 class="text-sm font-semibold">${escapar(h.cargo || "Cargo não informado")}</h3>
+          ${periodo ? `<p class="text-xs text-neutral-500 mt-1">${escapar(periodo)}</p>` : ""}
+          ${funcoes.length ? `
+            <ul class="mt-3 space-y-2">
+              ${funcoes.map(f => `
+                <li class="text-xs leading-relaxed text-neutral-300 flex gap-2">
+                  <span class="text-neutral-600">•</span>
+                  <span>${escapar(f)}</span>
+                </li>`).join("")}
+            </ul>` : ""}
+          <p class="text-xs text-neutral-600 mt-3">Somente leitura · Fonte: histórias</p>
+        </article>`;
+    }).join("");
+  }
+
+  function renderizarAcademicos() {
+    $("total-academica").textContent = cvAcademicos.length;
+
+    if (!cvAcademicos.length) {
+      $("academica").innerHTML = `
+        <div class="rounded-xl border border-neutral-800 p-4">
+          <p class="text-sm text-neutral-300">Nenhuma formação cadastrada.</p>
+          <p class="text-xs text-neutral-500 mt-1">
+            Adicione sua formação no módulo acadêmico.
+          </p>
+        </div>`;
+      return;
+    }
+
+    const camposPossiveis = [
+      ["curso", "Curso"],
+      ["formacao", "Formação"],
+      ["instituicao", "Instituição"],
+      ["instituicaoEnsino", "Instituição"],
+      ["nivel", "Nível"],
+      ["tipo", "Tipo"],
+      ["status", "Status"],
+      ["dataDe", "Início"],
+      ["dataAte", "Conclusão"],
+      ["inicio", "Início"],
+      ["fim", "Conclusão"],
+      ["anoConclusao", "Ano de conclusão"],
+      ["descricao", "Descrição"]
+    ];
+
+    $("academica").innerHTML = cvAcademicos.map(a => {
+      const campos = camposPossiveis
+        .filter(([chave]) => a[chave] !== undefined && a[chave] !== "")
+        .map(([chave, label]) => `
+          <p class="text-xs text-neutral-400 mt-2">
+            <span class="text-neutral-600">${escapar(label)}:</span>
+            ${escapar(chave.startsWith("data") || chave === "inicio" || chave === "fim"
+              ? dataBR(a[chave]) : valorTexto(a[chave]))}
+          </p>`).join("");
+
+      return `
+        <article class="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+          <h3 class="text-sm font-semibold">
+            ${escapar(a.curso || a.formacao || a.nome || a.titulo || "Formação")}
+          </h3>
+          ${campos}
+          <p class="text-xs text-neutral-600 mt-3">Somente leitura · Fonte: acadêmicos</p>
+        </article>`;
+    }).join("");
+  }
+
+  function renderizarPendencias(perfil) {
+    const pendencias = [];
+
+    camposCV.forEach(([campo, nome]) => {
+      if (!valorTexto(perfil[campo]).trim()) {
+        pendencias.push({ nome, detalhe: "Preencha este campo no perfil." });
+      }
+    });
+
+    if (!cvHistorias.length) {
+      pendencias.push({
+        nome: "Experiência profissional",
+        detalhe: "Nenhuma história encontrada no banco."
+      });
+    }
+
+    if (!cvAcademicos.length) {
+      pendencias.push({
+        nome: "Formação acadêmica",
+        detalhe: "Nenhuma formação encontrada no banco."
+      });
+    }
+
+    const preenchidos = camposCV.length - camposCV.filter(
+      ([campo]) => !valorTexto(perfil[campo]).trim()
+    ).length;
+
+    const totalItens = camposCV.length + 2;
+    const completos = preenchidos +
+      (cvHistorias.length ? 1 : 0) +
+      (cvAcademicos.length ? 1 : 0);
+
+    const percentual = Math.round(completos / totalItens * 100);
+
+    $("percentual").textContent = percentual + "%";
+    $("barra").style.width = percentual + "%";
+    $("status").textContent = pendencias.length
+      ? pendencias.length + " pendência(s)"
+      : "Perfil completo";
+
+    $("pendencias").innerHTML = pendencias.length
+      ? pendencias.map(p => `
+        <div class="flex gap-3 rounded-xl border border-neutral-800 p-3">
+          <i data-lucide="circle-alert" class="w-4 h-4 text-neutral-500 shrink-0 mt-0.5"></i>
+          <div>
+            <p class="text-sm text-neutral-200">${escapar(p.nome)}</p>
+            <p class="text-xs text-neutral-500 mt-1">${escapar(p.detalhe)}</p>
+          </div>
+        </div>`).join("")
+      : `<div class="rounded-xl border border-emerald-900 bg-emerald-950/30 p-3 text-sm text-emerald-300">
+          Todos os campos avaliados estão preenchidos.
+        </div>`;
+
+    return pendencias;
+  }
+
+  async function carregar() {
+    if (cvCarregando) return;
+    cvCarregando = true;
+
+    $("mensagem").textContent = "Consultando currículo...";
+    $("feedback").textContent = "";
+
+    try {
+      if (!cvUsuario) {
+        $("mensagem").textContent = "Faça login para consultar seu currículo.";
+        return;
+      }
+
+      const [perfilSnap, historiasSnap, academicosSnap] = await Promise.all([
+        getDoc(doc(cvDb, "professionalProfiles", cvUsuario.uid)),
+        getDocs(collection(cvDb, "historias")),
+        getDocs(collection(cvDb, "academicos"))
+      ]);
+
+      cvPerfil = perfilSnap.exists() ? perfilSnap.data() : {};
+
+      cvHistorias = historiasSnap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      cvAcademicos = academicosSnap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      preencher(cvPerfil);
+      renderizarHistorias();
+      renderizarAcademicos();
+      renderizarPendencias(cvPerfil);
+
+      $("mensagem").textContent = perfilSnap.exists()
+        ? "Currículo carregado do banco de dados."
+        : "Perfil ainda não cadastrado. Preencha os campos e salve.";
+
+      atualizarIcones();
+    } catch (erro) {
+      console.error("Erro ao carregar currículo:", erro);
+      $("mensagem").textContent =
+        "Erro ao carregar. Verifique a conexão e as permissões do Firestore.";
+    } finally {
+      cvCarregando = false;
+    }
+  }
+
+  async function salvar(evento) {
+    evento.preventDefault();
+
+    if (!cvUsuario) {
+      $("feedback").textContent = "Faça login antes de salvar.";
+      return;
+    }
+
+    const botao = $("salvar");
+    botao.disabled = true;
+    botao.textContent = "Salvando...";
+    $("feedback").textContent = "";
+
+    try {
+      const dados = lerFormulario();
+
+      await setDoc(
+        doc(cvDb, "professionalProfiles", cvUsuario.uid),
+        {
+          ...dados,
+          atualizadoEm: new Date().toISOString()
+        },
+        { merge: true }
+      );
+
+      cvPerfil = { ...cvPerfil, ...dados };
+      renderizarPendencias(cvPerfil);
+
+      $("feedback").textContent = "Currículo salvo com sucesso.";
+      $("mensagem").textContent = "Perfil atualizado.";
+    } catch (erro) {
+      console.error("Erro ao salvar currículo:", erro);
+      $("feedback").textContent =
+        "Não foi possível salvar. Verifique as regras do Firestore.";
+    } finally {
+      botao.disabled = false;
+      botao.textContent = "Salvar currículo";
+    }
+  }
+
+  $("form").addEventListener("submit", salvar);
+  $("atualizar").addEventListener("click", carregar);
+
+  onAuthStateChanged(cvAuth, usuario => {
+    cvUsuario = usuario;
+
+    if (usuario) {
+      carregar();
+    } else {
+      cvPerfil = {};
+      cvHistorias = [];
+      cvAcademicos = [];
+      preencher({});
+      renderizarHistorias();
+      renderizarAcademicos();
+      renderizarPendencias({});
+      $("mensagem").textContent = "Faça login para consultar seu currículo.";
+    }
+  });
+}
+
+function verificarCurriculo() {
+  const root = document.getElementById("curriculo-app");
+  if (root && root.dataset.cvInicializado !== "true") {
+    iniciarCurriculo(root);
+  }
+}
+
+verificarCurriculo();
+
+const observadorCurriculo = new MutationObserver(verificarCurriculo);
+observadorCurriculo.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+</script>
 
 </body>
 
