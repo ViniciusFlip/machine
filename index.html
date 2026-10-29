@@ -2742,18 +2742,9 @@ observadorRotina.observe(document.body, {
 
 
 <script type="module">
-import {
-  initializeApp, getApps, getApp
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-
-import {
-  getAuth, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
-import {
-  getFirestore, doc, getDoc, setDoc,
-  collection, getDocs
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const cvConfig = {
   apiKey: "AIzaSyD-xzRjMRVUpey19g745DvPjjpCApqSHVE",
@@ -2767,6 +2758,14 @@ const cvConfig = {
 const cvApp = getApps().length ? getApp() : initializeApp(cvConfig);
 const cvAuth = getAuth(cvApp);
 const cvDb = getFirestore(cvApp);
+
+/* PERFIL ÚNICO: todos os acessos usam este mesmo documento. */
+const CV_PERFIL_ID = "vinicius-araujo";
+const cvPerfilRef = doc(cvDb, "professionalProfiles", CV_PERFIL_ID);
+
+/* Histórias e formações continuam vindo das coleções originais. */
+const CV_HISTORIAS = "historias";
+const CV_ACADEMICOS = "academicos";
 
 const camposCV = [
   ["name", "Nome completo"],
@@ -2786,7 +2785,6 @@ let cvHistorias = [];
 let cvAcademicos = [];
 let cvPerfil = {};
 let cvCarregando = false;
-let cvObserver;
 
 function iniciarCurriculo(root) {
   if (!root || root.dataset.cvInicializado === "true") return;
@@ -2816,12 +2814,10 @@ function iniciarCurriculo(root) {
 
   function lerFormulario() {
     const dados = {};
-
     camposCV.forEach(([campo]) => {
       const input = root.querySelector("#cv-" + campo);
-      dados[campo] = input.value.trim();
+      if (input) dados[campo] = input.value.trim();
     });
-
     return dados;
   }
 
@@ -2829,9 +2825,8 @@ function iniciarCurriculo(root) {
     if (!valor) return "";
     const partes = String(valor).split("-");
     if (partes.length === 3) {
-      return new Date(
-        Number(partes[0]), Number(partes[1]) - 1, Number(partes[2])
-      ).toLocaleDateString("pt-BR");
+      return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]))
+        .toLocaleDateString("pt-BR");
     }
     return String(valor);
   }
@@ -2847,9 +2842,7 @@ function iniciarCurriculo(root) {
       $("historias").innerHTML = `
         <div class="rounded-xl border border-neutral-800 p-4">
           <p class="text-sm text-neutral-300">Nenhuma experiência cadastrada.</p>
-          <p class="text-xs text-neutral-500 mt-1">
-            Adicione sua trajetória no módulo de histórias profissionais.
-          </p>
+          <p class="mt-1 text-xs text-neutral-500">Adicione sua trajetória no módulo de histórias profissionais.</p>
         </div>`;
       return;
     }
@@ -2867,16 +2860,15 @@ function iniciarCurriculo(root) {
       return `
         <article class="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
           <h3 class="text-sm font-semibold">${escapar(h.cargo || "Cargo não informado")}</h3>
-          ${periodo ? `<p class="text-xs text-neutral-500 mt-1">${escapar(periodo)}</p>` : ""}
+          ${periodo ? `<p class="mt-1 text-xs text-neutral-500">${escapar(periodo)}</p>` : ""}
           ${funcoes.length ? `
             <ul class="mt-3 space-y-2">
               ${funcoes.map(f => `
-                <li class="text-xs leading-relaxed text-neutral-300 flex gap-2">
-                  <span class="text-neutral-600">•</span>
-                  <span>${escapar(f)}</span>
+                <li class="flex gap-2 text-xs leading-relaxed text-neutral-300">
+                  <span class="text-neutral-600">•</span><span>${escapar(f)}</span>
                 </li>`).join("")}
             </ul>` : ""}
-          <p class="text-xs text-neutral-600 mt-3">Somente leitura · Fonte: histórias</p>
+          <p class="mt-3 text-xs text-neutral-600">Somente leitura · Fonte: histórias</p>
         </article>`;
     }).join("");
   }
@@ -2888,9 +2880,7 @@ function iniciarCurriculo(root) {
       $("academica").innerHTML = `
         <div class="rounded-xl border border-neutral-800 p-4">
           <p class="text-sm text-neutral-300">Nenhuma formação cadastrada.</p>
-          <p class="text-xs text-neutral-500 mt-1">
-            Adicione sua formação no módulo acadêmico.
-          </p>
+          <p class="mt-1 text-xs text-neutral-500">Adicione sua formação no módulo acadêmico.</p>
         </div>`;
       return;
     }
@@ -2915,19 +2905,20 @@ function iniciarCurriculo(root) {
       const campos = camposPossiveis
         .filter(([chave]) => a[chave] !== undefined && a[chave] !== "")
         .map(([chave, label]) => `
-          <p class="text-xs text-neutral-400 mt-2">
+          <p class="mt-2 text-xs text-neutral-400">
             <span class="text-neutral-600">${escapar(label)}:</span>
-            ${escapar(chave.startsWith("data") || chave === "inicio" || chave === "fim"
-              ? dataBR(a[chave]) : valorTexto(a[chave]))}
+            ${escapar(
+              chave.startsWith("data") || chave === "inicio" || chave === "fim"
+                ? dataBR(a[chave])
+                : valorTexto(a[chave])
+            )}
           </p>`).join("");
 
       return `
         <article class="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-          <h3 class="text-sm font-semibold">
-            ${escapar(a.curso || a.formacao || a.nome || a.titulo || "Formação")}
-          </h3>
+          <h3 class="text-sm font-semibold">${escapar(a.curso || a.formacao || a.nome || a.titulo || "Formação")}</h3>
           ${campos}
-          <p class="text-xs text-neutral-600 mt-3">Somente leitura · Fonte: acadêmicos</p>
+          <p class="mt-3 text-xs text-neutral-600">Somente leitura · Fonte: acadêmicos</p>
         </article>`;
     }).join("");
   }
@@ -2942,28 +2933,19 @@ function iniciarCurriculo(root) {
     });
 
     if (!cvHistorias.length) {
-      pendencias.push({
-        nome: "Experiência profissional",
-        detalhe: "Nenhuma história encontrada no banco."
-      });
+      pendencias.push({ nome: "Experiência profissional", detalhe: "Nenhuma história encontrada no banco." });
     }
 
     if (!cvAcademicos.length) {
-      pendencias.push({
-        nome: "Formação acadêmica",
-        detalhe: "Nenhuma formação encontrada no banco."
-      });
+      pendencias.push({ nome: "Formação acadêmica", detalhe: "Nenhuma formação encontrada no banco." });
     }
 
-    const preenchidos = camposCV.length - camposCV.filter(
-      ([campo]) => !valorTexto(perfil[campo]).trim()
+    const preenchidos = camposCV.filter(
+      ([campo]) => valorTexto(perfil[campo]).trim()
     ).length;
 
     const totalItens = camposCV.length + 2;
-    const completos = preenchidos +
-      (cvHistorias.length ? 1 : 0) +
-      (cvAcademicos.length ? 1 : 0);
-
+    const completos = preenchidos + (cvHistorias.length ? 1 : 0) + (cvAcademicos.length ? 1 : 0);
     const percentual = Math.round(completos / totalItens * 100);
 
     $("percentual").textContent = percentual + "%";
@@ -2975,17 +2957,17 @@ function iniciarCurriculo(root) {
     $("pendencias").innerHTML = pendencias.length
       ? pendencias.map(p => `
         <div class="flex gap-3 rounded-xl border border-neutral-800 p-3">
-          <i data-lucide="circle-alert" class="w-4 h-4 text-neutral-500 shrink-0 mt-0.5"></i>
+          <i data-lucide="circle-alert" class="mt-0.5 h-4 w-4 shrink-0 text-neutral-500"></i>
           <div>
             <p class="text-sm text-neutral-200">${escapar(p.nome)}</p>
-            <p class="text-xs text-neutral-500 mt-1">${escapar(p.detalhe)}</p>
+            <p class="mt-1 text-xs text-neutral-500">${escapar(p.detalhe)}</p>
           </div>
         </div>`).join("")
       : `<div class="rounded-xl border border-emerald-900 bg-emerald-950/30 p-3 text-sm text-emerald-300">
           Todos os campos avaliados estão preenchidos.
         </div>`;
 
-    return pendencias;
+    atualizarIcones();
   }
 
   async function carregar() {
@@ -3002,22 +2984,15 @@ function iniciarCurriculo(root) {
       }
 
       const [perfilSnap, historiasSnap, academicosSnap] = await Promise.all([
-        getDoc(doc(cvDb, "professionalProfiles", cvUsuario.uid)),
-        getDocs(collection(cvDb, "historias")),
-        getDocs(collection(cvDb, "academicos"))
+        getDoc(cvPerfilRef),
+        getDocs(collection(cvDb, CV_HISTORIAS)),
+        getDocs(collection(cvDb, CV_ACADEMICOS))
       ]);
 
       cvPerfil = perfilSnap.exists() ? perfilSnap.data() : {};
 
-      cvHistorias = historiasSnap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-
-      cvAcademicos = academicosSnap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
+      cvHistorias = historiasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      cvAcademicos = academicosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       preencher(cvPerfil);
       renderizarHistorias();
@@ -3025,14 +3000,12 @@ function iniciarCurriculo(root) {
       renderizarPendencias(cvPerfil);
 
       $("mensagem").textContent = perfilSnap.exists()
-        ? "Currículo carregado do banco de dados."
+        ? "Currículo único carregado."
         : "Perfil ainda não cadastrado. Preencha os campos e salve.";
 
-      atualizarIcones();
     } catch (erro) {
       console.error("Erro ao carregar currículo:", erro);
-      $("mensagem").textContent =
-        "Erro ao carregar. Verifique a conexão e as permissões do Firestore.";
+      $("mensagem").textContent = "Erro ao carregar. Verifique a conexão e as permissões do Firestore.";
     } finally {
       cvCarregando = false;
     }
@@ -3054,24 +3027,19 @@ function iniciarCurriculo(root) {
     try {
       const dados = lerFormulario();
 
-      await setDoc(
-        doc(cvDb, "professionalProfiles", cvUsuario.uid),
-        {
-          ...dados,
-          atualizadoEm: new Date().toISOString()
-        },
-        { merge: true }
-      );
+      await setDoc(cvPerfilRef, {
+        ...dados,
+        atualizadoEm: new Date().toISOString()
+      }, { merge: true });
 
       cvPerfil = { ...cvPerfil, ...dados };
       renderizarPendencias(cvPerfil);
 
       $("feedback").textContent = "Currículo salvo com sucesso.";
-      $("mensagem").textContent = "Perfil atualizado.";
+      $("mensagem").textContent = "Perfil único atualizado.";
     } catch (erro) {
       console.error("Erro ao salvar currículo:", erro);
-      $("feedback").textContent =
-        "Não foi possível salvar. Verifique as regras do Firestore.";
+      $("feedback").textContent = "Não foi possível salvar. Verifique as regras do Firestore.";
     } finally {
       botao.disabled = false;
       botao.textContent = "Salvar currículo";
@@ -3101,18 +3069,13 @@ function iniciarCurriculo(root) {
 
 function verificarCurriculo() {
   const root = document.getElementById("curriculo-app");
-  if (root && root.dataset.cvInicializado !== "true") {
-    iniciarCurriculo(root);
-  }
+  if (root && root.dataset.cvInicializado !== "true") iniciarCurriculo(root);
 }
 
 verificarCurriculo();
 
 const observadorCurriculo = new MutationObserver(verificarCurriculo);
-observadorCurriculo.observe(document.body, {
-  childList: true,
-  subtree: true
-});
+observadorCurriculo.observe(document.body, { childList: true, subtree: true });
 </script>
 
 </body>
